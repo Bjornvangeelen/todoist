@@ -19,6 +19,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import type { ProjectWithSections } from "@/types";
+import { ThemeSelector } from "@/components/layout/theme-selector";
 
 const navItems = [
   { href: "/inbox", icon: Inbox, label: "Inbox" },
@@ -37,14 +38,19 @@ export function AppSidebar() {
   });
 
   return (
-    <aside className="w-64 min-h-screen bg-gray-900 text-gray-100 flex flex-col">
+    <aside className="sidebar-root w-64 min-h-screen flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b border-gray-700">
+      <div className="p-4 border-b sidebar-border">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center flex-shrink-0">
-            <Inbox className="w-4 h-4 text-white" />
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ backgroundColor: "var(--primary)" }}
+          >
+            <Inbox className="w-4 h-4" style={{ color: "var(--primary-foreground)" }} />
           </div>
-          <span className="font-semibold text-white">Mijn Taken</span>
+          <span className="font-semibold" style={{ color: "var(--sidebar-foreground)" }}>
+            Mijn Taken
+          </span>
         </div>
       </div>
 
@@ -55,10 +61,8 @@ export function AppSidebar() {
             key={href}
             href={href}
             className={cn(
-              "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
-              pathname === href || pathname.startsWith(href + "/")
-                ? "bg-gray-700 text-white"
-                : "text-gray-300 hover:bg-gray-800 hover:text-white"
+              "sidebar-item",
+              (pathname === href || pathname.startsWith(href + "/")) && "sidebar-item-active"
             )}
           >
             <Icon className="w-4 h-4 flex-shrink-0" />
@@ -70,10 +74,8 @@ export function AppSidebar() {
         <Link
           href="/ai-suggestions"
           className={cn(
-            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
-            pathname === "/ai-suggestions"
-              ? "bg-gray-700 text-white"
-              : "text-gray-300 hover:bg-gray-800 hover:text-white"
+            "sidebar-item",
+            pathname === "/ai-suggestions" && "sidebar-item-active"
           )}
         >
           <Sparkles className="w-4 h-4 flex-shrink-0 text-yellow-400" />
@@ -84,7 +86,7 @@ export function AppSidebar() {
         <div className="pt-4">
           <button
             onClick={() => setProjectsOpen(!projectsOpen)}
-            className="flex items-center justify-between w-full px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-200 transition-colors"
+            className="sidebar-section-label flex items-center justify-between w-full px-3 py-1 text-xs font-semibold uppercase tracking-wider transition-colors"
           >
             <span>Projecten</span>
             {projectsOpen ? (
@@ -101,10 +103,8 @@ export function AppSidebar() {
                   key={project.id}
                   href={`/projects/${project.id}`}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors group",
-                    pathname === `/projects/${project.id}`
-                      ? "bg-gray-700 text-white"
-                      : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                    "sidebar-item",
+                    pathname === `/projects/${project.id}` && "sidebar-item-active"
                   )}
                 >
                   <span
@@ -116,7 +116,7 @@ export function AppSidebar() {
               ))}
               <Link
                 href="/projects/new"
-                className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-gray-200 transition-colors"
+                className="sidebar-item"
               >
                 <Plus className="w-4 h-4" />
                 Project toevoegen
@@ -130,10 +130,8 @@ export function AppSidebar() {
           <Link
             href="/labels"
             className={cn(
-              "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
-              pathname === "/labels"
-                ? "bg-gray-700 text-white"
-                : "text-gray-300 hover:bg-gray-800 hover:text-white"
+              "sidebar-item",
+              pathname === "/labels" && "sidebar-item-active"
             )}
           >
             <Hash className="w-4 h-4 flex-shrink-0" />
@@ -143,14 +141,13 @@ export function AppSidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="p-3 border-t border-gray-700 space-y-1">
+      <div className="p-3 border-t sidebar-border space-y-1">
+        <ThemeSelector />
         <Link
           href="/settings/integrations"
           className={cn(
-            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
-            pathname.startsWith("/settings")
-              ? "bg-gray-700 text-white"
-              : "text-gray-300 hover:bg-gray-800 hover:text-white"
+            "sidebar-item",
+            pathname.startsWith("/settings") && "sidebar-item-active"
           )}
         >
           <Settings className="w-4 h-4" />
@@ -159,7 +156,7 @@ export function AppSidebar() {
         {session?.user && (
           <button
             onClick={() => signOut({ callbackUrl: "/inbox" })}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors w-full text-left"
+            className="sidebar-item w-full"
           >
             <LogOut className="w-4 h-4" />
             Uitloggen
