@@ -1,0 +1,250 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.dagplanner.app.debug"
+4    android:versionCode="1"
+5    android:versionName="1.0.0-debug" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="26"
+9        android:targetSdkVersion="35" />
+10
+11    <!-- Internet toegang voor Google Calendar API -->
+12    <uses-permission android:name="android.permission.INTERNET" />
+12-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:5:5-67
+12-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:5:22-64
+13    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+13-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:6:5-79
+13-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:6:22-76
+14
+15    <!-- Notificaties voor taakoverzicht -->
+16    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+16-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:9:5-77
+16-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:9:22-74
+17
+18    <!-- Vibratie voor notificaties -->
+19    <uses-permission android:name="android.permission.VIBRATE" />
+19-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:12:5-66
+19-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:12:22-63
+20
+21    <permission
+21-->[androidx.core:core:1.13.1] /home/bjorn/.gradle/caches/9.0.0/transforms/c69b9fa83f39241a5a480eeb08129ea3/transformed/core-1.13.1/AndroidManifest.xml:22:5-24:47
+22        android:name="com.dagplanner.app.debug.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+22-->[androidx.core:core:1.13.1] /home/bjorn/.gradle/caches/9.0.0/transforms/c69b9fa83f39241a5a480eeb08129ea3/transformed/core-1.13.1/AndroidManifest.xml:23:9-81
+23        android:protectionLevel="signature" />
+23-->[androidx.core:core:1.13.1] /home/bjorn/.gradle/caches/9.0.0/transforms/c69b9fa83f39241a5a480eeb08129ea3/transformed/core-1.13.1/AndroidManifest.xml:24:9-44
+24
+25    <uses-permission android:name="com.dagplanner.app.debug.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+25-->[androidx.core:core:1.13.1] /home/bjorn/.gradle/caches/9.0.0/transforms/c69b9fa83f39241a5a480eeb08129ea3/transformed/core-1.13.1/AndroidManifest.xml:26:5-97
+25-->[androidx.core:core:1.13.1] /home/bjorn/.gradle/caches/9.0.0/transforms/c69b9fa83f39241a5a480eeb08129ea3/transformed/core-1.13.1/AndroidManifest.xml:26:22-94
+26
+27    <application
+27-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:14:5-53:19
+28        android:name="com.dagplanner.app.DagPlannerApp"
+28-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:15:9-38
+29        android:allowBackup="true"
+29-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:16:9-35
+30        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+30-->[androidx.core:core:1.13.1] /home/bjorn/.gradle/caches/9.0.0/transforms/c69b9fa83f39241a5a480eeb08129ea3/transformed/core-1.13.1/AndroidManifest.xml:28:18-86
+31        android:dataExtractionRules="@xml/data_extraction_rules"
+31-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:17:9-65
+32        android:debuggable="true"
+33        android:extractNativeLibs="false"
+34        android:fullBackupContent="@xml/backup_rules"
+34-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:18:9-54
+35        android:icon="@mipmap/ic_launcher"
+35-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:19:9-43
+36        android:label="@string/app_name"
+36-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:20:9-41
+37        android:networkSecurityConfig="@xml/network_security_config"
+37-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:24:9-69
+38        android:roundIcon="@mipmap/ic_launcher_round"
+38-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:21:9-54
+39        android:supportsRtl="true"
+39-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:22:9-35
+40        android:theme="@style/Theme.DagPlanner" >
+40-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:23:9-48
+41        <activity
+41-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:26:9-36:20
+42            android:name="com.dagplanner.app.MainActivity"
+42-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:27:13-41
+43            android:exported="true"
+43-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:28:13-36
+44            android:label="@string/app_name"
+44-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:29:13-45
+45            android:theme="@style/Theme.DagPlanner"
+45-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:30:13-52
+46            android:windowSoftInputMode="adjustResize" >
+46-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:31:13-55
+47            <intent-filter>
+47-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:32:13-35:29
+48                <action android:name="android.intent.action.MAIN" />
+48-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:33:17-69
+48-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:33:25-66
+49
+50                <category android:name="android.intent.category.LAUNCHER" />
+50-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:34:17-77
+50-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:34:27-74
+51            </intent-filter>
+52        </activity>
+53
+54        <!-- Google OAuth Redirect activity -->
+55        <activity
+55-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:39:9-51:20
+56            android:name="net.openid.appauth.RedirectUriReceiverActivity"
+56-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:40:13-74
+57            android:exported="true"
+57-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:41:13-36
+58            android:theme="@android:style/Theme.Translucent.NoTitleBar" >
+58-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:42:13-72
+59            <intent-filter>
+59-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:43:13-50:29
+60                <action android:name="android.intent.action.VIEW" />
+60-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:44:17-69
+60-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:44:25-66
+61
+62                <category android:name="android.intent.category.DEFAULT" />
+62-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:45:17-76
+62-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:45:27-73
+63                <category android:name="android.intent.category.BROWSABLE" />
+63-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:46:17-78
+63-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:46:27-75
+64
+65                <data
+65-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:47:17-49:53
+66                    android:host="oauth2redirect"
+66-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:49:21-50
+67                    android:scheme="com.dagplanner.app" />
+67-->/home/bjorn/StudioProjects/todoist/android-app/app/src/main/AndroidManifest.xml:48:21-56
+68            </intent-filter>
+69        </activity>
+70        <activity
+70-->[com.google.android.gms:play-services-auth:21.2.0] /home/bjorn/.gradle/caches/9.0.0/transforms/af1635aebf8215ace08a3a6f2cd98d18/transformed/play-services-auth-21.2.0/AndroidManifest.xml:23:9-27:75
+71            android:name="com.google.android.gms.auth.api.signin.internal.SignInHubActivity"
+71-->[com.google.android.gms:play-services-auth:21.2.0] /home/bjorn/.gradle/caches/9.0.0/transforms/af1635aebf8215ace08a3a6f2cd98d18/transformed/play-services-auth-21.2.0/AndroidManifest.xml:24:13-93
+72            android:excludeFromRecents="true"
+72-->[com.google.android.gms:play-services-auth:21.2.0] /home/bjorn/.gradle/caches/9.0.0/transforms/af1635aebf8215ace08a3a6f2cd98d18/transformed/play-services-auth-21.2.0/AndroidManifest.xml:25:13-46
+73            android:exported="false"
+73-->[com.google.android.gms:play-services-auth:21.2.0] /home/bjorn/.gradle/caches/9.0.0/transforms/af1635aebf8215ace08a3a6f2cd98d18/transformed/play-services-auth-21.2.0/AndroidManifest.xml:26:13-37
+74            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+74-->[com.google.android.gms:play-services-auth:21.2.0] /home/bjorn/.gradle/caches/9.0.0/transforms/af1635aebf8215ace08a3a6f2cd98d18/transformed/play-services-auth-21.2.0/AndroidManifest.xml:27:13-72
+75        <!--
+76            Service handling Google Sign-In user revocation. For apps that do not integrate with
+77            Google Sign-In, this service will never be started.
+78        -->
+79        <service
+79-->[com.google.android.gms:play-services-auth:21.2.0] /home/bjorn/.gradle/caches/9.0.0/transforms/af1635aebf8215ace08a3a6f2cd98d18/transformed/play-services-auth-21.2.0/AndroidManifest.xml:33:9-37:51
+80            android:name="com.google.android.gms.auth.api.signin.RevocationBoundService"
+80-->[com.google.android.gms:play-services-auth:21.2.0] /home/bjorn/.gradle/caches/9.0.0/transforms/af1635aebf8215ace08a3a6f2cd98d18/transformed/play-services-auth-21.2.0/AndroidManifest.xml:34:13-89
+81            android:exported="true"
+81-->[com.google.android.gms:play-services-auth:21.2.0] /home/bjorn/.gradle/caches/9.0.0/transforms/af1635aebf8215ace08a3a6f2cd98d18/transformed/play-services-auth-21.2.0/AndroidManifest.xml:35:13-36
+82            android:permission="com.google.android.gms.auth.api.signin.permission.REVOCATION_NOTIFICATION"
+82-->[com.google.android.gms:play-services-auth:21.2.0] /home/bjorn/.gradle/caches/9.0.0/transforms/af1635aebf8215ace08a3a6f2cd98d18/transformed/play-services-auth-21.2.0/AndroidManifest.xml:36:13-107
+83            android:visibleToInstantApps="true" />
+83-->[com.google.android.gms:play-services-auth:21.2.0] /home/bjorn/.gradle/caches/9.0.0/transforms/af1635aebf8215ace08a3a6f2cd98d18/transformed/play-services-auth-21.2.0/AndroidManifest.xml:37:13-48
+84
+85        <activity
+85-->[com.google.android.gms:play-services-base:18.3.0] /home/bjorn/.gradle/caches/9.0.0/transforms/a4827c5cd2ae603d552919457ba0e3bf/transformed/play-services-base-18.3.0/AndroidManifest.xml:20:9-22:45
+86            android:name="com.google.android.gms.common.api.GoogleApiActivity"
+86-->[com.google.android.gms:play-services-base:18.3.0] /home/bjorn/.gradle/caches/9.0.0/transforms/a4827c5cd2ae603d552919457ba0e3bf/transformed/play-services-base-18.3.0/AndroidManifest.xml:20:19-85
+87            android:exported="false"
+87-->[com.google.android.gms:play-services-base:18.3.0] /home/bjorn/.gradle/caches/9.0.0/transforms/a4827c5cd2ae603d552919457ba0e3bf/transformed/play-services-base-18.3.0/AndroidManifest.xml:22:19-43
+88            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+88-->[com.google.android.gms:play-services-base:18.3.0] /home/bjorn/.gradle/caches/9.0.0/transforms/a4827c5cd2ae603d552919457ba0e3bf/transformed/play-services-base-18.3.0/AndroidManifest.xml:21:19-78
+89
+90        <meta-data
+90-->[com.google.android.gms:play-services-basement:18.3.0] /home/bjorn/.gradle/caches/9.0.0/transforms/76daa0f9b764e5a4b9da73ba5358026f/transformed/play-services-basement-18.3.0/AndroidManifest.xml:21:9-23:69
+91            android:name="com.google.android.gms.version"
+91-->[com.google.android.gms:play-services-basement:18.3.0] /home/bjorn/.gradle/caches/9.0.0/transforms/76daa0f9b764e5a4b9da73ba5358026f/transformed/play-services-basement-18.3.0/AndroidManifest.xml:22:13-58
+92            android:value="@integer/google_play_services_version" />
+92-->[com.google.android.gms:play-services-basement:18.3.0] /home/bjorn/.gradle/caches/9.0.0/transforms/76daa0f9b764e5a4b9da73ba5358026f/transformed/play-services-basement-18.3.0/AndroidManifest.xml:23:13-66
+93
+94        <provider
+94-->[androidx.emoji2:emoji2:1.3.0] /home/bjorn/.gradle/caches/9.0.0/transforms/49c0a0de0899fcef5233e3eda5035094/transformed/emoji2-1.3.0/AndroidManifest.xml:24:9-32:20
+95            android:name="androidx.startup.InitializationProvider"
+95-->[androidx.emoji2:emoji2:1.3.0] /home/bjorn/.gradle/caches/9.0.0/transforms/49c0a0de0899fcef5233e3eda5035094/transformed/emoji2-1.3.0/AndroidManifest.xml:25:13-67
+96            android:authorities="com.dagplanner.app.debug.androidx-startup"
+96-->[androidx.emoji2:emoji2:1.3.0] /home/bjorn/.gradle/caches/9.0.0/transforms/49c0a0de0899fcef5233e3eda5035094/transformed/emoji2-1.3.0/AndroidManifest.xml:26:13-68
+97            android:exported="false" >
+97-->[androidx.emoji2:emoji2:1.3.0] /home/bjorn/.gradle/caches/9.0.0/transforms/49c0a0de0899fcef5233e3eda5035094/transformed/emoji2-1.3.0/AndroidManifest.xml:27:13-37
+98            <meta-data
+98-->[androidx.emoji2:emoji2:1.3.0] /home/bjorn/.gradle/caches/9.0.0/transforms/49c0a0de0899fcef5233e3eda5035094/transformed/emoji2-1.3.0/AndroidManifest.xml:29:13-31:52
+99                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+99-->[androidx.emoji2:emoji2:1.3.0] /home/bjorn/.gradle/caches/9.0.0/transforms/49c0a0de0899fcef5233e3eda5035094/transformed/emoji2-1.3.0/AndroidManifest.xml:30:17-75
+100                android:value="androidx.startup" />
+100-->[androidx.emoji2:emoji2:1.3.0] /home/bjorn/.gradle/caches/9.0.0/transforms/49c0a0de0899fcef5233e3eda5035094/transformed/emoji2-1.3.0/AndroidManifest.xml:31:17-49
+101            <meta-data
+101-->[androidx.lifecycle:lifecycle-process:2.8.6] /home/bjorn/.gradle/caches/9.0.0/transforms/fe9d28b01bd169e736ff3a6fde428343/transformed/lifecycle-process-2.8.6/AndroidManifest.xml:29:13-31:52
+102                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+102-->[androidx.lifecycle:lifecycle-process:2.8.6] /home/bjorn/.gradle/caches/9.0.0/transforms/fe9d28b01bd169e736ff3a6fde428343/transformed/lifecycle-process-2.8.6/AndroidManifest.xml:30:17-78
+103                android:value="androidx.startup" />
+103-->[androidx.lifecycle:lifecycle-process:2.8.6] /home/bjorn/.gradle/caches/9.0.0/transforms/fe9d28b01bd169e736ff3a6fde428343/transformed/lifecycle-process-2.8.6/AndroidManifest.xml:31:17-49
+104            <meta-data
+104-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/bjorn/.gradle/caches/9.0.0/transforms/b7b4397c2e4eb352bcd72226169a505d/transformed/profileinstaller-1.3.1/AndroidManifest.xml:29:13-31:52
+105                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+105-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/bjorn/.gradle/caches/9.0.0/transforms/b7b4397c2e4eb352bcd72226169a505d/transformed/profileinstaller-1.3.1/AndroidManifest.xml:30:17-85
+106                android:value="androidx.startup" />
+106-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/bjorn/.gradle/caches/9.0.0/transforms/b7b4397c2e4eb352bcd72226169a505d/transformed/profileinstaller-1.3.1/AndroidManifest.xml:31:17-49
+107        </provider>
+108
+109        <activity
+109-->[androidx.compose.ui:ui-test-manifest:1.7.4] /home/bjorn/.gradle/caches/9.0.0/transforms/4926c13b727eef1d170300f57ea3a720/transformed/ui-test-manifest-1.7.4/AndroidManifest.xml:23:9-25:39
+110            android:name="androidx.activity.ComponentActivity"
+110-->[androidx.compose.ui:ui-test-manifest:1.7.4] /home/bjorn/.gradle/caches/9.0.0/transforms/4926c13b727eef1d170300f57ea3a720/transformed/ui-test-manifest-1.7.4/AndroidManifest.xml:24:13-63
+111            android:exported="true" />
+111-->[androidx.compose.ui:ui-test-manifest:1.7.4] /home/bjorn/.gradle/caches/9.0.0/transforms/4926c13b727eef1d170300f57ea3a720/transformed/ui-test-manifest-1.7.4/AndroidManifest.xml:25:13-36
+112        <activity
+112-->[androidx.compose.ui:ui-tooling-android:1.7.4] /home/bjorn/.gradle/caches/9.0.0/transforms/f7a7e57a1b2046f5322a71b9f54983b4/transformed/ui-tooling-release/AndroidManifest.xml:23:9-25:39
+113            android:name="androidx.compose.ui.tooling.PreviewActivity"
+113-->[androidx.compose.ui:ui-tooling-android:1.7.4] /home/bjorn/.gradle/caches/9.0.0/transforms/f7a7e57a1b2046f5322a71b9f54983b4/transformed/ui-tooling-release/AndroidManifest.xml:24:13-71
+114            android:exported="true" />
+114-->[androidx.compose.ui:ui-tooling-android:1.7.4] /home/bjorn/.gradle/caches/9.0.0/transforms/f7a7e57a1b2046f5322a71b9f54983b4/transformed/ui-tooling-release/AndroidManifest.xml:25:13-36
+115
+116        <service
+116-->[androidx.room:room-runtime:2.6.1] /home/bjorn/.gradle/caches/9.0.0/transforms/513275dcfdbda946fa5ba45ec2a6db40/transformed/room-runtime-2.6.1/AndroidManifest.xml:24:9-28:63
+117            android:name="androidx.room.MultiInstanceInvalidationService"
+117-->[androidx.room:room-runtime:2.6.1] /home/bjorn/.gradle/caches/9.0.0/transforms/513275dcfdbda946fa5ba45ec2a6db40/transformed/room-runtime-2.6.1/AndroidManifest.xml:25:13-74
+118            android:directBootAware="true"
+118-->[androidx.room:room-runtime:2.6.1] /home/bjorn/.gradle/caches/9.0.0/transforms/513275dcfdbda946fa5ba45ec2a6db40/transformed/room-runtime-2.6.1/AndroidManifest.xml:26:13-43
+119            android:exported="false" />
+119-->[androidx.room:room-runtime:2.6.1] /home/bjorn/.gradle/caches/9.0.0/transforms/513275dcfdbda946fa5ba45ec2a6db40/transformed/room-runtime-2.6.1/AndroidManifest.xml:27:13-37
+120
+121        <receiver
+121-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/bjorn/.gradle/caches/9.0.0/transforms/b7b4397c2e4eb352bcd72226169a505d/transformed/profileinstaller-1.3.1/AndroidManifest.xml:34:9-52:20
+122            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+122-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/bjorn/.gradle/caches/9.0.0/transforms/b7b4397c2e4eb352bcd72226169a505d/transformed/profileinstaller-1.3.1/AndroidManifest.xml:35:13-76
+123            android:directBootAware="false"
+123-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/bjorn/.gradle/caches/9.0.0/transforms/b7b4397c2e4eb352bcd72226169a505d/transformed/profileinstaller-1.3.1/AndroidManifest.xml:36:13-44
+124            android:enabled="true"
+124-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/bjorn/.gradle/caches/9.0.0/transforms/b7b4397c2e4eb352bcd72226169a505d/transformed/profileinstaller-1.3.1/AndroidManifest.xml:37:13-35
+125            android:exported="true"
+125-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/bjorn/.gradle/caches/9.0.0/transforms/b7b4397c2e4eb352bcd72226169a505d/transformed/profileinstaller-1.3.1/AndroidManifest.xml:38:13-36
+126            android:permission="android.permission.DUMP" >
+126-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/bjorn/.gradle/caches/9.0.0/transforms/b7b4397c2e4eb352bcd72226169a505d/transformed/profileinstaller-1.3.1/AndroidManifest.xml:39:13-57
+127            <intent-filter>
+127-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/bjorn/.gradle/caches/9.0.0/transforms/b7b4397c2e4eb352bcd72226169a505d/transformed/profileinstaller-1.3.1/AndroidManifest.xml:40:13-42:29
+128                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+128-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/bjorn/.gradle/caches/9.0.0/transforms/b7b4397c2e4eb352bcd72226169a505d/transformed/profileinstaller-1.3.1/AndroidManifest.xml:41:17-91
+128-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/bjorn/.gradle/caches/9.0.0/transforms/b7b4397c2e4eb352bcd72226169a505d/transformed/profileinstaller-1.3.1/AndroidManifest.xml:41:25-88
+129            </intent-filter>
+130            <intent-filter>
+130-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/bjorn/.gradle/caches/9.0.0/transforms/b7b4397c2e4eb352bcd72226169a505d/transformed/profileinstaller-1.3.1/AndroidManifest.xml:43:13-45:29
+131                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+131-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/bjorn/.gradle/caches/9.0.0/transforms/b7b4397c2e4eb352bcd72226169a505d/transformed/profileinstaller-1.3.1/AndroidManifest.xml:44:17-85
+131-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/bjorn/.gradle/caches/9.0.0/transforms/b7b4397c2e4eb352bcd72226169a505d/transformed/profileinstaller-1.3.1/AndroidManifest.xml:44:25-82
+132            </intent-filter>
+133            <intent-filter>
+133-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/bjorn/.gradle/caches/9.0.0/transforms/b7b4397c2e4eb352bcd72226169a505d/transformed/profileinstaller-1.3.1/AndroidManifest.xml:46:13-48:29
+134                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+134-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/bjorn/.gradle/caches/9.0.0/transforms/b7b4397c2e4eb352bcd72226169a505d/transformed/profileinstaller-1.3.1/AndroidManifest.xml:47:17-88
+134-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/bjorn/.gradle/caches/9.0.0/transforms/b7b4397c2e4eb352bcd72226169a505d/transformed/profileinstaller-1.3.1/AndroidManifest.xml:47:25-85
+135            </intent-filter>
+136            <intent-filter>
+136-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/bjorn/.gradle/caches/9.0.0/transforms/b7b4397c2e4eb352bcd72226169a505d/transformed/profileinstaller-1.3.1/AndroidManifest.xml:49:13-51:29
+137                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+137-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/bjorn/.gradle/caches/9.0.0/transforms/b7b4397c2e4eb352bcd72226169a505d/transformed/profileinstaller-1.3.1/AndroidManifest.xml:50:17-95
+137-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/bjorn/.gradle/caches/9.0.0/transforms/b7b4397c2e4eb352bcd72226169a505d/transformed/profileinstaller-1.3.1/AndroidManifest.xml:50:25-92
+138            </intent-filter>
+139        </receiver>
+140    </application>
+141
+142</manifest>

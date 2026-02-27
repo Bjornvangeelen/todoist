@@ -119,10 +119,10 @@ class GoogleCalendarService @Inject constructor(
             val endTime: LocalTime?
 
             if (isAllDay) {
-                val startRaw = event.start.date.value  // "yyyy-MM-dd"
+                val startRaw = event.start.date.toStringRfc3339()
                 startDate = LocalDate.parse(startRaw)
                 startTime = null
-                val endRaw = event.end?.date?.value ?: startRaw
+                val endRaw = event.end?.date?.toStringRfc3339() ?: startRaw
                 endDate = LocalDate.parse(endRaw).minusDays(1) // Google geeft exclusieve einddatum
                 endTime = null
             } else {
