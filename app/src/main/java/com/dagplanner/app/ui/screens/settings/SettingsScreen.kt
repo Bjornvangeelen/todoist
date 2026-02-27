@@ -53,9 +53,19 @@ fun SettingsScreen(
             try {
                 val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
                 val account: GoogleSignInAccount = task.getResult(ApiException::class.java)
-                account.email?.let { email -> viewModel.onGoogleAccountLinked(email) }
-            } catch (e: ApiException) { }
+                val email = account.email
+                if (email != null) {
+                    viewModel.onGoogleAccountLinked(email)
+                } else {
+                    viewModel.onGoogleSignInFailed("Kon e-mailadres niet ophalen van Google account")
+                }
+            } catch (e: ApiException) {
+                viewModel.onGoogleSignInFailed("Inloggen mislukt (code ${e.statusCode})")
+            } catch (e: Exception) {
+                viewModel.onGoogleSignInFailed("Inloggen mislukt: ${e.localizedMessage}")
+            }
         }
+        // resultCode != RESULT_OK betekent dat de gebruiker geannuleerd heeft — geen actie nodig
     }
 
     fun startGoogleSignIn() {
