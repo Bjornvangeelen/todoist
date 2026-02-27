@@ -4,9 +4,12 @@ import android.app.Activity
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -19,11 +22,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.dagplanner.app.ui.theme.AppTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -40,7 +46,6 @@ fun SettingsScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    // Google Sign-In launcher
     val googleSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -48,16 +53,11 @@ fun SettingsScreen(
             try {
                 val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
                 val account: GoogleSignInAccount = task.getResult(ApiException::class.java)
-                account.email?.let { email ->
-                    viewModel.onGoogleAccountLinked(email)
-                }
-            } catch (e: ApiException) {
-                // Inloggen mislukt
-            }
+                account.email?.let { email -> viewModel.onGoogleAccountLinked(email) }
+            } catch (e: ApiException) { }
         }
     }
 
-    // Bouw Google Sign-In opties
     fun startGoogleSignIn() {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
@@ -108,9 +108,7 @@ fun SettingsScreen(
                             modifier = Modifier.weight(1f),
                             color = MaterialTheme.colorScheme.onSecondaryContainer
                         )
-                        TextButton(onClick = { viewModel.clearMessage() }) {
-                            Text("OK")
-                        }
+                        TextButton(onClick = { viewModel.clearMessage() }) { Text("OK") }
                     }
                 }
             }
@@ -130,17 +128,44 @@ fun SettingsScreen(
                             modifier = Modifier.weight(1f),
                             color = MaterialTheme.colorScheme.onErrorContainer
                         )
-                        TextButton(onClick = { viewModel.clearMessage() }) {
-                            Text("OK")
+                        TextButton(onClick = { viewModel.clearMessage() }) { Text("OK") }
+                    }
+                }
+            }
+
+            // ── Thema kiezen ───────────────────────────────────────────
+            SettingsSection(title = "Thema") {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Huidig: ${uiState.selectedTheme.themeName}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(Modifier.height(12.dp))
+
+                    // 2 rijen van 5 thema's
+                    val themes = AppTheme.entries
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        for (row in themes.chunked(5)) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                row.forEach { theme ->
+                                    ThemeSwatch(
+                                        theme = theme,
+                                        isSelected = uiState.selectedTheme == theme,
+                                        onClick = { viewModel.setTheme(theme) }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            // Google Agenda sectie
+            // ── Google Agenda ──────────────────────────────────────────
             SettingsSection(title = "Google Agenda") {
                 if (uiState.googleAccountName != null) {
-                    // Account gekoppeld
                     ListItem(
                         headlineContent = { Text("Gekoppeld account") },
                         supportingContent = { Text(uiState.googleAccountName!!) },
@@ -153,73 +178,44 @@ fun SettingsScreen(
                             )
                         }
                     )
-
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-
                     ListItem(
                         headlineContent = { Text("Nu synchroniseren") },
                         supportingContent = { Text("Evenementen ophalen van Google Agenda") },
                         leadingContent = {
                             if (uiState.isSyncing) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(24.dp),
-                                    strokeWidth = 2.dp
-                                )
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                             } else {
                                 Icon(Icons.Default.Sync, contentDescription = null)
                             }
                         },
-                        modifier = Modifier.clickableIfEnabled(!uiState.isSyncing) {
-                            viewModel.syncNow()
-                        }
+                        modifier = Modifier.clickableIfEnabled(!uiState.isSyncing) { viewModel.syncNow() }
                     )
-
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-
                     ListItem(
                         headlineContent = {
-                            Text(
-                                "Ontkoppelen",
-                                color = MaterialTheme.colorScheme.error
-                            )
+                            Text("Ontkoppelen", color = MaterialTheme.colorScheme.error)
                         },
                         supportingContent = { Text("Verwijder de koppeling met Google Agenda") },
                         leadingContent = {
-                            Icon(
-                                Icons.Default.LinkOff,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error
-                            )
+                            Icon(Icons.Default.LinkOff, contentDescription = null, tint = MaterialTheme.colorScheme.error)
                         },
-                        modifier = Modifier.clickableIfEnabled(true) {
-                            viewModel.unlinkGoogleAccount()
-                        }
+                        modifier = Modifier.clickableIfEnabled(true) { viewModel.unlinkGoogleAccount() }
                     )
                 } else {
-                    // Nog niet gekoppeld
                     ListItem(
                         headlineContent = { Text("Google Agenda koppelen") },
-                        supportingContent = {
-                            Text("Koppel je Google account om je agenda-evenementen te bekijken")
-                        },
+                        supportingContent = { Text("Koppel je Google account om je agenda-evenementen te bekijken") },
                         leadingContent = {
-                            Icon(
-                                Icons.Default.CalendarMonth,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
+                            Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         },
-                        trailingContent = {
-                            Icon(Icons.Default.Link, contentDescription = null)
-                        },
-                        modifier = Modifier.clickableIfEnabled(true) {
-                            startGoogleSignIn()
-                        }
+                        trailingContent = { Icon(Icons.Default.Link, contentDescription = null) },
+                        modifier = Modifier.clickableIfEnabled(true) { startGoogleSignIn() }
                     )
                 }
             }
 
-            // Over de app
+            // ── Over de app ────────────────────────────────────────────
             SettingsSection(title = "Over") {
                 ListItem(
                     headlineContent = { Text("DagPlanner") },
@@ -238,6 +234,45 @@ fun SettingsScreen(
 }
 
 @Composable
+fun ThemeSwatch(
+    theme: AppTheme,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.clickable(onClick = onClick)
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(theme.previewColor)
+                .then(
+                    if (isSelected) Modifier.border(3.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
+                    else Modifier.border(1.dp, Color.Transparent, CircleShape)
+                )
+        ) {
+            if (isSelected) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = theme.themeName.split(" ").first(),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+@Composable
 fun SettingsSection(
     title: String,
     content: @Composable ColumnScope.() -> Unit
@@ -252,9 +287,7 @@ fun SettingsSection(
         )
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
             Column(content = content)
