@@ -88,6 +88,10 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun onGoogleSignInFailed(message: String) {
+        _uiState.value = _uiState.value.copy(error = message)
+    }
+
     fun clearMessage() {
         _uiState.value = _uiState.value.copy(syncMessage = null, error = null)
     }
