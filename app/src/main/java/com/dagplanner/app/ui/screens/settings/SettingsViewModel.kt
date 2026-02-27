@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dagplanner.app.data.preferences.UserPreferences
 import com.dagplanner.app.data.repository.CalendarRepository
+import com.dagplanner.app.ui.theme.AppTheme
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,6 +19,7 @@ data class SettingsUiState(
     val isSyncing: Boolean = false,
     val syncMessage: String? = null,
     val error: String? = null,
+    val selectedTheme: AppTheme = AppTheme.OCEAAN_BLAUW,
 )
 
 @HiltViewModel
@@ -35,6 +37,17 @@ class SettingsViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(googleAccountName = account)
             }
         }
+        viewModelScope.launch {
+            userPreferences.selectedTheme.collect { theme ->
+                _uiState.value = _uiState.value.copy(selectedTheme = theme)
+            }
+        }
+    }
+
+    fun setTheme(theme: AppTheme) {
+        viewModelScope.launch {
+            userPreferences.setTheme(theme)
+        }
     }
 
     fun onGoogleAccountLinked(accountName: String) {
@@ -45,7 +58,6 @@ class SettingsViewModel @Inject constructor(
                 syncMessage = null,
                 error = null
             )
-            // Direct synchroniseren na koppeling
             syncNow(accountName)
         }
     }
