@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --version)",
+      "Bash(npm --version)",
+      "Bash(python3 -c \"import sys, json; data = json.load\\(sys.stdin\\); print\\(data[0][''text'']\\)\")",
+      "Bash(python3 -c \":*)",
+      "Bash(npx create-next-app@latest . --typescript --tailwind --app --src-dir --import-alias \"@/*\" --no-eslint --use-npm)",
+      "Bash(export NODE_HOME=\"/home/bjorn/.var/app/com.visualstudio.code/config/nvm/versions/node/v24.14.0\")",
+      "Bash(export PATH=\"$NODE_HOME/bin:$PATH\")",
+      "Bash(npx --version)",
+      "Bash(npx create-next-app@latest . --typescript --tailwind --app --src-dir --import-alias \"@/*\" --no-eslint --use-npm --yes --name=\"todoist-app\")",
+      "Bash(npm install @prisma/client prisma next-auth @auth/prisma-adapter @anthropic-ai/sdk googleapis @microsoft/microsoft-graph-client imapflow mailparser @tanstack/react-query zod date-fns lucide-react class-variance-authority clsx tailwind-merge @radix-ui/react-checkbox @radix-ui/react-dialog @radix-ui/react-dropdown-menu @radix-ui/react-popover @radix-ui/react-scroll-area @radix-ui/react-separator @radix-ui/react-slot @radix-ui/react-tooltip @radix-ui/react-avatar @radix-ui/react-label @radix-ui/react-select @radix-ui/react-switch @radix-ui/react-tabs @radix-ui/react-badge cmdk sonner react-hook-form @hookform/resolvers framer-motion crypto-js)",
+      "Bash(npm install @prisma/client prisma next-auth@beta @auth/prisma-adapter @anthropic-ai/sdk googleapis @microsoft/microsoft-graph-client imapflow mailparser @tanstack/react-query zod date-fns lucide-react class-variance-authority clsx tailwind-merge @radix-ui/react-checkbox @radix-ui/react-dialog @radix-ui/react-dropdown-menu @radix-ui/react-popover @radix-ui/react-scroll-area @radix-ui/react-separator @radix-ui/react-slot @radix-ui/react-tooltip @radix-ui/react-avatar @radix-ui/react-label @radix-ui/react-select @radix-ui/react-switch @radix-ui/react-tabs cmdk sonner react-hook-form @hookform/resolvers framer-motion)"
+    ]
+  }
+}
