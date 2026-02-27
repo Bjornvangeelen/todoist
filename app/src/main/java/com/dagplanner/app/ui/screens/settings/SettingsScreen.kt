@@ -1,6 +1,5 @@
 package com.dagplanner.app.ui.screens.settings
 
-import android.app.Activity
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -49,23 +48,23 @@ fun SettingsScreen(
     val googleSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            try {
-                val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-                val account: GoogleSignInAccount = task.getResult(ApiException::class.java)
-                val email = account.email
-                if (email != null) {
-                    viewModel.onGoogleAccountLinked(email)
-                } else {
-                    viewModel.onGoogleSignInFailed("Kon e-mailadres niet ophalen van Google account")
-                }
-            } catch (e: ApiException) {
-                viewModel.onGoogleSignInFailed("Inloggen mislukt (code ${e.statusCode})")
-            } catch (e: Exception) {
-                viewModel.onGoogleSignInFailed("Inloggen mislukt: ${e.localizedMessage}")
+        try {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            val account: GoogleSignInAccount = task.getResult(ApiException::class.java)
+            val email = account.email
+            if (email != null) {
+                viewModel.onGoogleAccountLinked(email)
+            } else {
+                viewModel.onGoogleSignInFailed("Kon e-mailadres niet ophalen van Google account")
             }
+        } catch (e: ApiException) {
+            // 12501 = gebruiker heeft geannuleerd — geen foutmelding tonen
+            if (e.statusCode != 12501) {
+                viewModel.onGoogleSignInFailed("Inloggen mislukt (code ${e.statusCode})")
+            }
+        } catch (e: Exception) {
+            viewModel.onGoogleSignInFailed("Inloggen mislukt: ${e.localizedMessage}")
         }
-        // resultCode != RESULT_OK betekent dat de gebruiker geannuleerd heeft — geen actie nodig
     }
 
     fun startGoogleSignIn() {
