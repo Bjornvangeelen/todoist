@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LocationOn
@@ -30,11 +29,14 @@ fun EventEditDialog(
 ) {
     val isEditing = state.eventToEdit != null
 
-    var showStartDatePicker by remember { mutableStateOf(false) }
-    var showEndDatePicker by remember { mutableStateOf(false) }
-    var showStartTimePicker by remember { mutableStateOf(false) }
-    var showEndTimePicker by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var startTimeExpanded by remember { mutableStateOf(false) }
+    var endTimeExpanded by remember { mutableStateOf(false) }
+
+    val timeSlots = remember {
+        (0..23).flatMap { hour -> listOf(0, 15, 30, 45).map { min -> LocalTime.of(hour, min) } }
+    }
 
     if (showDeleteConfirm) {
         AlertDialog(
@@ -42,12 +44,9 @@ fun EventEditDialog(
             title = { Text("Evenement verwijderen?") },
             text = { Text("Dit evenement wordt ook verwijderd uit Google Agenda.") },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDeleteConfirm = false
-                        onDelete()
-                    }
-                ) { Text("Verwijderen", color = MaterialTheme.colorScheme.error) }
+                TextButton(onClick = { showDeleteConfirm = false; onDelete() }) {
+                    Text("Verwijderen", color = MaterialTheme.colorScheme.error)
+                }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirm = false }) { Text("Annuleren") }
@@ -55,65 +54,20 @@ fun EventEditDialog(
         )
     }
 
-    if (showStartDatePicker) {
+    if (showDatePicker) {
         EventDatePickerDialog(
             initialDate = state.startDate,
             onDateSelected = { date ->
-                onFieldUpdate {
-                    copy(
-                        startDate = date,
-                        endDate = if (endDate.isBefore(date)) date else endDate
-                    )
-                }
-                showStartDatePicker = false
+                onFieldUpdate { copy(startDate = date, endDate = date) }
+                showDatePicker = false
             },
-            onDismiss = { showStartDatePicker = false }
-        )
-    }
-
-    if (showEndDatePicker) {
-        EventDatePickerDialog(
-            initialDate = state.endDate,
-            onDateSelected = { date ->
-                onFieldUpdate { copy(endDate = date) }
-                showEndDatePicker = false
-            },
-            onDismiss = { showEndDatePicker = false }
-        )
-    }
-
-    if (showStartTimePicker) {
-        EventTimePickerDialog(
-            initialTime = state.startTime,
-            onTimeSelected = { time ->
-                onFieldUpdate {
-                    copy(
-                        startTime = time,
-                        endTime = if (!endTime.isAfter(time)) time.plusHours(1) else endTime
-                    )
-                }
-                showStartTimePicker = false
-            },
-            onDismiss = { showStartTimePicker = false }
-        )
-    }
-
-    if (showEndTimePicker) {
-        EventTimePickerDialog(
-            initialTime = state.endTime,
-            onTimeSelected = { time ->
-                onFieldUpdate { copy(endTime = time) }
-                showEndTimePicker = false
-            },
-            onDismiss = { showEndTimePicker = false }
+            onDismiss = { showDatePicker = false }
         )
     }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = {
-            Text(if (isEditing) "Evenement bewerken" else "Nieuw evenement")
-        },
+        title = { Text(if (isEditing) "Evenement bewerken" else "Nieuw evenement") },
         text = {
             Column(
                 modifier = Modifier
@@ -144,52 +98,88 @@ fun EventEditDialog(
                     )
                 }
 
-                // Startdatum en -tijd
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                // Datum (één veld)
+                OutlinedButton(
+                    onClick = { showDatePicker = true },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    OutlinedButton(
-                        onClick = { showStartDatePicker = true },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(formatDate(state.startDate), style = MaterialTheme.typography.bodySmall)
-                    }
-                    if (!state.isAllDay) {
-                        OutlinedButton(
-                            onClick = { showStartTimePicker = true },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Icon(Icons.Default.AccessTime, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text(formatTime(state.startTime), style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
+                    Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(formatEventDate(state.startDate))
                 }
 
-                // Einddatum en -tijd
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = { showEndDatePicker = true },
-                        modifier = Modifier.weight(1f)
+                // Start- en eindtijd als dropdowns (alleen bij niet hele dag)
+                if (!state.isAllDay) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(formatDate(state.endDate), style = MaterialTheme.typography.bodySmall)
-                    }
-                    if (!state.isAllDay) {
-                        OutlinedButton(
-                            onClick = { showEndTimePicker = true },
+                        ExposedDropdownMenuBox(
+                            expanded = startTimeExpanded,
+                            onExpandedChange = { startTimeExpanded = it },
                             modifier = Modifier.weight(1f)
                         ) {
-                            Icon(Icons.Default.AccessTime, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text(formatTime(state.endTime), style = MaterialTheme.typography.bodySmall)
+                            OutlinedTextField(
+                                value = formatEventTime(state.startTime),
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Van") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = startTimeExpanded) },
+                                modifier = Modifier.menuAnchor().fillMaxWidth(),
+                                singleLine = true,
+                            )
+                            ExposedDropdownMenu(
+                                expanded = startTimeExpanded,
+                                onDismissRequest = { startTimeExpanded = false }
+                            ) {
+                                timeSlots.forEach { time ->
+                                    DropdownMenuItem(
+                                        text = { Text(formatEventTime(time)) },
+                                        onClick = {
+                                            onFieldUpdate {
+                                                copy(
+                                                    startTime = time,
+                                                    endTime = if (!endTime.isAfter(time)) time.plusHours(1) else endTime
+                                                )
+                                            }
+                                            startTimeExpanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        Text("–", style = MaterialTheme.typography.bodyMedium)
+
+                        ExposedDropdownMenuBox(
+                            expanded = endTimeExpanded,
+                            onExpandedChange = { endTimeExpanded = it },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            OutlinedTextField(
+                                value = formatEventTime(state.endTime),
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Tot") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = endTimeExpanded) },
+                                modifier = Modifier.menuAnchor().fillMaxWidth(),
+                                singleLine = true,
+                            )
+                            ExposedDropdownMenu(
+                                expanded = endTimeExpanded,
+                                onDismissRequest = { endTimeExpanded = false }
+                            ) {
+                                timeSlots.forEach { time ->
+                                    DropdownMenuItem(
+                                        text = { Text(formatEventTime(time)) },
+                                        onClick = {
+                                            onFieldUpdate { copy(endTime = time) }
+                                            endTimeExpanded = false
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -220,9 +210,7 @@ fun EventEditDialog(
                     OutlinedButton(
                         onClick = { showDeleteConfirm = true },
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
-                        ),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
                         enabled = !state.isSaving
                     ) {
                         Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -245,9 +233,7 @@ fun EventEditDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, enabled = !state.isSaving) {
-                Text("Annuleren")
-            }
+            TextButton(onClick = onDismiss, enabled = !state.isSaving) { Text("Annuleren") }
         }
     )
 }
@@ -262,7 +248,6 @@ private fun EventDatePickerDialog(
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = initialDate.toEpochDay() * 86_400_000L
     )
-
     DatePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
@@ -272,48 +257,15 @@ private fun EventDatePickerDialog(
                 }
             }) { Text("OK") }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Annuleren") }
-        }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Annuleren") } }
     ) {
         DatePicker(state = datePickerState)
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun EventTimePickerDialog(
-    initialTime: LocalTime,
-    onTimeSelected: (LocalTime) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val timePickerState = rememberTimePickerState(
-        initialHour = initialTime.hour,
-        initialMinute = initialTime.minute,
-        is24Hour = true
-    )
+private fun formatEventDate(date: LocalDate): String =
+    date.format(DateTimeFormatter.ofPattern("EEEE d MMMM yyyy", Locale("nl")))
+        .replaceFirstChar { it.uppercase() }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Tijd kiezen") },
-        text = {
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                TimePicker(state = timePickerState)
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                onTimeSelected(LocalTime.of(timePickerState.hour, timePickerState.minute))
-            }) { Text("OK") }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Annuleren") }
-        }
-    )
-}
-
-private fun formatDate(date: LocalDate): String =
-    date.format(DateTimeFormatter.ofPattern("d MMM yyyy", Locale("nl")))
-
-private fun formatTime(time: LocalTime): String =
+private fun formatEventTime(time: LocalTime): String =
     time.format(DateTimeFormatter.ofPattern("HH:mm"))

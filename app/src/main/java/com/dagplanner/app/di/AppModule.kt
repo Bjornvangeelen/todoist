@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.dagplanner.app.data.local.AppDatabase
 import com.dagplanner.app.data.local.CalendarDao
+import com.dagplanner.app.data.local.TaskDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -26,4 +27,7 @@ object AppModule {
 
     @Provides
     fun provideCalendarDao(db: AppDatabase): CalendarDao = db.calendarDao()
+
+    @Provides
+    fun provideTaskDao(db: AppDatabase): TaskDao = db.taskDao()
 }
