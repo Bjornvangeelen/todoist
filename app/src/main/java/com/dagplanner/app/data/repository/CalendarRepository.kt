@@ -5,6 +5,7 @@ import com.dagplanner.app.data.local.CalendarDao
 import com.dagplanner.app.data.model.CalendarEvent
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
+import java.time.LocalTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -27,6 +28,69 @@ class CalendarRepository @Inject constructor(
      * @param from Startdatum (standaard: begin van huidige maand - 1 maand)
      * @param to Einddatum (standaard: einde van volgende maand)
      */
+    suspend fun createEvent(
+        accountName: String,
+        title: String,
+        description: String?,
+        location: String?,
+        isAllDay: Boolean,
+        startDate: LocalDate,
+        startTime: LocalTime?,
+        endDate: LocalDate,
+        endTime: LocalTime?,
+    ): Result<Unit> {
+        val result = googleCalendarService.createEvent(
+            accountName = accountName,
+            title = title,
+            description = description,
+            location = location,
+            isAllDay = isAllDay,
+            startDate = startDate,
+            startTime = startTime,
+            endDate = endDate,
+            endTime = endTime,
+        )
+        if (result.isSuccess) syncGoogleCalendar(accountName)
+        return result
+    }
+
+    suspend fun updateEvent(
+        accountName: String,
+        event: CalendarEvent,
+        title: String,
+        description: String?,
+        location: String?,
+        isAllDay: Boolean,
+        startDate: LocalDate,
+        startTime: LocalTime?,
+        endDate: LocalDate,
+        endTime: LocalTime?,
+    ): Result<Unit> {
+        val result = googleCalendarService.updateEvent(
+            accountName = accountName,
+            event = event,
+            title = title,
+            description = description,
+            location = location,
+            isAllDay = isAllDay,
+            startDate = startDate,
+            startTime = startTime,
+            endDate = endDate,
+            endTime = endTime,
+        )
+        if (result.isSuccess) syncGoogleCalendar(accountName)
+        return result
+    }
+
+    suspend fun deleteEvent(
+        accountName: String,
+        event: CalendarEvent,
+    ): Result<Unit> {
+        val result = googleCalendarService.deleteEvent(accountName, event)
+        if (result.isSuccess) syncGoogleCalendar(accountName)
+        return result
+    }
+
     suspend fun syncGoogleCalendar(
         accountName: String,
         from: LocalDate = LocalDate.now().withDayOfMonth(1).minusMonths(1),

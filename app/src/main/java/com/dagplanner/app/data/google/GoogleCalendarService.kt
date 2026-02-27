@@ -7,6 +7,7 @@ import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.calendar.Calendar
 import com.google.api.services.calendar.CalendarScopes
 import com.google.api.services.calendar.model.Event
+import com.google.api.services.calendar.model.EventDateTime
 import com.dagplanner.app.data.model.CalendarEvent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -26,7 +27,7 @@ class GoogleCalendarService @Inject constructor(
     companion object {
         private const val APP_NAME = "DagPlanner"
         val SCOPES = listOf(
-            CalendarScopes.CALENDAR_READONLY
+            CalendarScopes.CALENDAR
         )
     }
 
@@ -155,6 +156,108 @@ class GoogleCalendarService @Inject constructor(
             )
         } catch (e: Exception) {
             null
+        }
+    }
+
+    /**
+     * Maakt een nieuw evenement aan in Google Agenda.
+     * @param calendarId Agenda-ID (standaard "primary")
+     */
+    suspend fun createEvent(
+        accountName: String,
+        calendarId: String = "primary",
+        title: String,
+        description: String?,
+        location: String?,
+        isAllDay: Boolean,
+        startDate: LocalDate,
+        startTime: LocalTime?,
+        endDate: LocalDate,
+        endTime: LocalTime?,
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val service = buildCalendarService(accountName)
+            val zone = ZoneId.systemDefault()
+
+            val event = Event().apply {
+                summary = title
+                if (!description.isNullOrBlank()) this.description = description
+                if (!location.isNullOrBlank()) this.location = location
+            }
+
+            if (isAllDay) {
+                event.start = EventDateTime().setDate(com.google.api.client.util.DateTime(startDate.toString()))
+                event.end = EventDateTime().setDate(com.google.api.client.util.DateTime(endDate.plusDays(1).toString()))
+            } else {
+                val startMs = startDate.atTime(startTime ?: LocalTime.of(9, 0)).atZone(zone).toInstant().toEpochMilli()
+                val endMs = endDate.atTime(endTime ?: LocalTime.of(10, 0)).atZone(zone).toInstant().toEpochMilli()
+                event.start = EventDateTime().setDateTime(com.google.api.client.util.DateTime(startMs))
+                event.end = EventDateTime().setDateTime(com.google.api.client.util.DateTime(endMs))
+            }
+
+            service.events().insert(calendarId, event).execute()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Wijzigt een bestaand evenement in Google Agenda.
+     */
+    suspend fun updateEvent(
+        accountName: String,
+        event: CalendarEvent,
+        title: String,
+        description: String?,
+        location: String?,
+        isAllDay: Boolean,
+        startDate: LocalDate,
+        startTime: LocalTime?,
+        endDate: LocalDate,
+        endTime: LocalTime?,
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val service = buildCalendarService(accountName)
+            val zone = ZoneId.systemDefault()
+            val googleEventId = event.id.removePrefix("${event.calendarId}_")
+
+            val existing = service.events().get(event.calendarId, googleEventId).execute()
+            existing.summary = title
+            existing.description = if (description.isNullOrBlank()) null else description
+            existing.location = if (location.isNullOrBlank()) null else location
+
+            if (isAllDay) {
+                existing.start = EventDateTime().setDate(com.google.api.client.util.DateTime(startDate.toString()))
+                existing.end = EventDateTime().setDate(com.google.api.client.util.DateTime(endDate.plusDays(1).toString()))
+            } else {
+                val startMs = startDate.atTime(startTime ?: LocalTime.of(9, 0)).atZone(zone).toInstant().toEpochMilli()
+                val endMs = endDate.atTime(endTime ?: LocalTime.of(10, 0)).atZone(zone).toInstant().toEpochMilli()
+                existing.start = EventDateTime().setDateTime(com.google.api.client.util.DateTime(startMs))
+                existing.end = EventDateTime().setDateTime(com.google.api.client.util.DateTime(endMs))
+            }
+
+            service.events().update(event.calendarId, googleEventId, existing).execute()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Verwijdert een evenement uit Google Agenda.
+     */
+    suspend fun deleteEvent(
+        accountName: String,
+        event: CalendarEvent,
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val service = buildCalendarService(accountName)
+            val googleEventId = event.id.removePrefix("${event.calendarId}_")
+            service.events().delete(event.calendarId, googleEventId).execute()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 

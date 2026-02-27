@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Refresh
@@ -46,6 +47,17 @@ fun CalendarScreen(
     val uiState by viewModel.uiState.collectAsState()
     val selectedDayEvents by viewModel.selectedDayEvents.collectAsState()
     val monthEvents by viewModel.monthEvents.collectAsState()
+    val editorState by viewModel.editorState.collectAsState()
+
+    if (editorState.isOpen) {
+        EventEditDialog(
+            state = editorState,
+            onDismiss = { viewModel.closeEventEditor() },
+            onSave = { viewModel.saveEvent() },
+            onDelete = { editorState.eventToEdit?.let { viewModel.deleteEvent(it) } },
+            onFieldUpdate = { viewModel.updateEditorField(it) },
+        )
+    }
 
     // Groepeer evenementen per datum voor de maandweergave (stipjes)
     val eventDates = remember(monthEvents) {
@@ -82,6 +94,13 @@ fun CalendarScreen(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             )
+        },
+        floatingActionButton = {
+            if (uiState.googleAccountName != null) {
+                FloatingActionButton(onClick = { viewModel.openNewEventEditor() }) {
+                    Icon(Icons.Default.Add, contentDescription = "Nieuw evenement")
+                }
+            }
         }
     ) { padding ->
         Column(
@@ -184,7 +203,7 @@ fun CalendarScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(selectedDayEvents) { event ->
-                        EventCard(event = event)
+                        EventCard(event = event, onClick = { viewModel.openEditEventEditor(event) })
                     }
                 }
             }
@@ -316,14 +335,14 @@ fun MonthCalendarView(
 }
 
 @Composable
-fun EventCard(event: CalendarEvent) {
+fun EventCard(event: CalendarEvent, onClick: (() -> Unit)? = null) {
     val eventColor = event.colorHex?.let {
         try { Color(android.graphics.Color.parseColor(it)) }
         catch (e: Exception) { null }
     } ?: MaterialTheme.colorScheme.primary
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)

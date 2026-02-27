@@ -70,7 +70,7 @@ fun SettingsScreen(
     fun startGoogleSignIn() {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
-            .requestScopes(Scope(CalendarScopes.CALENDAR_READONLY))
+            .requestScopes(Scope(CalendarScopes.CALENDAR))
             .build()
         val client = GoogleSignIn.getClient(context, gso)
         googleSignInLauncher.launch(client.signInIntent)

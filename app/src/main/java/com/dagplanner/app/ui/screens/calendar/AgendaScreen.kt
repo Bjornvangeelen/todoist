@@ -1,6 +1,7 @@
 package com.dagplanner.app.ui.screens.calendar
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -8,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -42,6 +44,17 @@ fun AgendaScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val monthEvents by viewModel.monthEvents.collectAsState()
+    val editorState by viewModel.editorState.collectAsState()
+
+    if (editorState.isOpen) {
+        EventEditDialog(
+            state = editorState,
+            onDismiss = { viewModel.closeEventEditor() },
+            onSave = { viewModel.saveEvent() },
+            onDelete = { editorState.eventToEdit?.let { viewModel.deleteEvent(it) } },
+            onFieldUpdate = { viewModel.updateEditorField(it) },
+        )
+    }
 
     // Bouw agenda voor de komende 3 maanden
     val agendaItems = remember(monthEvents, uiState.displayedMonth) {
@@ -74,6 +87,13 @@ fun AgendaScreen(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             )
+        },
+        floatingActionButton = {
+            if (uiState.googleAccountName != null) {
+                FloatingActionButton(onClick = { viewModel.openNewEventEditor() }) {
+                    Icon(Icons.Default.Add, contentDescription = "Nieuw evenement")
+                }
+            }
         }
     ) { padding ->
         if (uiState.googleAccountName == null) {
@@ -128,7 +148,8 @@ fun AgendaScreen(
                 items(agendaItems, key = { it.date.toString() }) { dayItem ->
                     AgendaDaySection(
                         dayItem = dayItem,
-                        isToday = dayItem.date == today
+                        isToday = dayItem.date == today,
+                        onEventClick = { viewModel.openEditEventEditor(it) }
                     )
                 }
             }
@@ -139,7 +160,8 @@ fun AgendaScreen(
 @Composable
 fun AgendaDaySection(
     dayItem: DayAgendaItem,
-    isToday: Boolean
+    isToday: Boolean,
+    onEventClick: (com.dagplanner.app.data.model.CalendarEvent) -> Unit = {},
 ) {
     val date = dayItem.date
     val dayFormatter = DateTimeFormatter.ofPattern("d", Locale("nl"))
@@ -213,7 +235,7 @@ fun AgendaDaySection(
                 }
             } else {
                 dayItem.events.forEach { event ->
-                    AgendaEventItem(event = event)
+                    AgendaEventItem(event = event, onClick = { onEventClick(event) })
                     Spacer(Modifier.height(4.dp))
                 }
             }
@@ -227,7 +249,7 @@ fun AgendaDaySection(
 }
 
 @Composable
-fun AgendaEventItem(event: CalendarEvent) {
+fun AgendaEventItem(event: CalendarEvent, onClick: (() -> Unit)? = null) {
     val eventColor = event.colorHex?.let {
         try { Color(android.graphics.Color.parseColor(it)) }
         catch (e: Exception) { null }
@@ -238,6 +260,7 @@ fun AgendaEventItem(event: CalendarEvent) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(4.dp))
             .background(eventColor.copy(alpha = 0.1f))
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
             .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
