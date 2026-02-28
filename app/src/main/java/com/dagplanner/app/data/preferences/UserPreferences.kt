@@ -22,6 +22,7 @@ class UserPreferences @Inject constructor(
     companion object {
         val GOOGLE_ACCOUNT_NAME = stringPreferencesKey("google_account_name")
         val SELECTED_THEME = stringPreferencesKey("selected_theme")
+        val HOUSEHOLD_ID = stringPreferencesKey("household_id")
     }
 
     /** Het gekoppelde Google account (null als niet gekoppeld) */
@@ -44,6 +45,22 @@ class UserPreferences @Inject constructor(
     suspend fun clearGoogleAccount() {
         context.dataStore.edit { prefs ->
             prefs.remove(GOOGLE_ACCOUNT_NAME)
+        }
+    }
+
+    val householdId: Flow<String?> = context.dataStore.data.map { prefs ->
+        prefs[HOUSEHOLD_ID]
+    }
+
+    suspend fun setHouseholdId(id: String) {
+        context.dataStore.edit { prefs ->
+            prefs[HOUSEHOLD_ID] = id
+        }
+    }
+
+    suspend fun clearHouseholdId() {
+        context.dataStore.edit { prefs ->
+            prefs.remove(HOUSEHOLD_ID)
         }
     }
 
