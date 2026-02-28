@@ -41,17 +41,24 @@ class GmailService @Inject constructor(
     /**
      * Haalt de inbox op met metadata (afzender, onderwerp, datum, snippet).
      */
+    data class InboxPage(
+        val emails: List<EmailMessage>,
+        val nextPageToken: String? = null,
+    )
+
     suspend fun fetchInbox(
         accountName: String,
-        maxResults: Long = 50,
-    ): Result<List<EmailMessage>> = withContext(Dispatchers.IO) {
+        maxResults: Long = 25,
+        pageToken: String? = null,
+    ): Result<InboxPage> = withContext(Dispatchers.IO) {
         try {
             val service = buildGmailService(accountName)
-            val listResponse = service.users().messages().list("me")
+            val request = service.users().messages().list("me")
                 .setLabelIds(listOf("INBOX"))
                 .setMaxResults(maxResults)
-                .execute()
+            if (pageToken != null) request.pageToken = pageToken
 
+            val listResponse = request.execute()
             val messages = listResponse.messages ?: emptyList()
             val emails = messages.mapNotNull { msg ->
                 try {
@@ -64,7 +71,7 @@ class GmailService @Inject constructor(
                     null
                 }
             }
-            Result.success(emails)
+            Result.success(InboxPage(emails, listResponse.nextPageToken))
         } catch (e: Exception) {
             Result.failure(e)
         }

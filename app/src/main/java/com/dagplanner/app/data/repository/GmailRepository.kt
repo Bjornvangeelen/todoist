@@ -9,8 +9,11 @@ import javax.inject.Singleton
 class GmailRepository @Inject constructor(
     private val gmailService: GmailService
 ) {
-    suspend fun fetchInbox(accountName: String, maxResults: Long = 50): Result<List<EmailMessage>> =
-        gmailService.fetchInbox(accountName, maxResults)
+    suspend fun fetchInbox(
+        accountName: String,
+        maxResults: Long = 25,
+        pageToken: String? = null,
+    ): Result<GmailService.InboxPage> = gmailService.fetchInbox(accountName, maxResults, pageToken)
 
     suspend fun fetchBody(accountName: String, messageId: String): Result<String> =
         gmailService.fetchBody(accountName, messageId)

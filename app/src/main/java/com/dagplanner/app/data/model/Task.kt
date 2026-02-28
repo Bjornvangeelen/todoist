@@ -15,6 +15,13 @@ enum class TaskPriority(val label: String) {
 
 enum class TaskType { TASK, SHOPPING }
 
+enum class TaskRecurrence(val label: String) {
+    NONE("Geen"),
+    DAILY("Dagelijks"),
+    WEEKLY("Wekelijks"),
+    MONTHLY("Maandelijks"),
+}
+
 @Entity(tableName = "tasks")
 data class Task(
     @PrimaryKey val id: String = UUID.randomUUID().toString(),
@@ -27,6 +34,7 @@ data class Task(
     val deadline: LocalDate? = null,
     val location: String? = null,
     val reminder: String? = null,
+    val recurrence: TaskRecurrence = TaskRecurrence.NONE,
     val isCompleted: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
 )
