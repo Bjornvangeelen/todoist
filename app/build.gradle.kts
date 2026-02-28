@@ -63,6 +63,17 @@ android {
     }
 }
 
+configurations.all {
+    resolutionStrategy {
+        force("io.grpc:grpc-core:1.68.1")
+        force("io.grpc:grpc-api:1.68.1")
+        force("io.grpc:grpc-android:1.68.1")
+        force("io.grpc:grpc-okhttp:1.68.1")
+        force("io.grpc:grpc-stub:1.68.1")
+        force("io.grpc:grpc-protobuf-lite:1.68.1")
+    }
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
