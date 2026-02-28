@@ -8,7 +8,7 @@ import com.dagplanner.app.data.model.Task
 
 @Database(
     entities = [CalendarEvent::class, Task::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

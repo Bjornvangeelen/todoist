@@ -13,10 +13,13 @@ enum class TaskPriority(val label: String) {
     HIGH("Hoog"),
 }
 
+enum class TaskType { TASK, SHOPPING }
+
 @Entity(tableName = "tasks")
 data class Task(
     @PrimaryKey val id: String = UUID.randomUUID().toString(),
     val title: String,
+    val taskType: TaskType = TaskType.TASK,
     val date: LocalDate? = null,
     val time: LocalTime? = null,
     val label: String? = null,

@@ -94,7 +94,7 @@ class CalendarRepository @Inject constructor(
     suspend fun syncGoogleCalendar(
         accountName: String,
         from: LocalDate = LocalDate.now().withDayOfMonth(1).minusMonths(1),
-        to: LocalDate = LocalDate.now().withDayOfMonth(1).plusMonths(2)
+        to: LocalDate = LocalDate.now().withDayOfMonth(1).plusMonths(3)
     ): Result<Int> {
         val result = googleCalendarService.fetchEvents(accountName, from, to)
         return result.map { events ->

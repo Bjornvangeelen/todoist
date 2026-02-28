@@ -157,7 +157,7 @@ fun TasksScreen(
 }
 
 @Composable
-private fun TaskGroupHeader(
+fun TaskGroupHeader(
     title: String,
     color: Color = MaterialTheme.colorScheme.primary
 ) {
