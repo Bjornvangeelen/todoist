@@ -63,13 +63,16 @@ class CalendarViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    /** Evenementen voor de weergegeven maand (voor maandoverzicht met stipjes) */
+    /**
+     * Evenementen voor de weergegeven maand + 2 volgende maanden.
+     * Hiermee worden zowel de maandstipjes als het agenda-dagoverzicht gevoed.
+     */
     val monthEvents: StateFlow<List<CalendarEvent>> = _uiState
         .flatMapLatest { state ->
             val month = state.displayedMonth
             repository.getEventsInRange(
                 from = month.atDay(1),
-                to = month.atEndOfMonth()
+                to = month.plusMonths(2).atEndOfMonth()
             )
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

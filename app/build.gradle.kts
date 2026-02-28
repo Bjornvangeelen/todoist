@@ -95,10 +95,11 @@ dependencies {
     // DataStore
     implementation(libs.datastore.preferences)
 
-    // Google Sign-In & Calendar
+    // Google Sign-In, Calendar & Gmail
     implementation(libs.play.services.auth)
     implementation(libs.google.api.client.android)
     implementation(libs.google.api.services.calendar)
+    implementation(libs.google.api.services.gmail)
 
     // Image loading
     implementation(libs.coil.compose)
