@@ -14,4 +14,10 @@ class GmailRepository @Inject constructor(
 
     suspend fun fetchBody(accountName: String, messageId: String): Result<String> =
         gmailService.fetchBody(accountName, messageId)
+
+    suspend fun trashMessage(accountName: String, messageId: String): Result<Unit> =
+        gmailService.trashMessage(accountName, messageId)
+
+    suspend fun sendReply(accountName: String, originalEmail: EmailMessage, replyText: String): Result<Unit> =
+        gmailService.sendReply(accountName, originalEmail, replyText)
 }

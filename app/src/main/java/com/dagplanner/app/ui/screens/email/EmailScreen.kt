@@ -3,14 +3,15 @@ package com.dagplanner.app.ui.screens.email
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Reply
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,12 +38,20 @@ fun EmailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    // Detail bottom sheet
     uiState.selectedEmail?.let { email ->
         EmailDetailSheet(
             email = email,
             isLoadingBody = uiState.isLoadingBody,
-            onDismiss = { viewModel.closeEmail() }
+            isReplying = uiState.isReplying,
+            replyText = uiState.replyText,
+            isSendingReply = uiState.isSendingReply,
+            isDeleting = uiState.isDeleting,
+            onReplyTextChange = { viewModel.updateReplyText(it) },
+            onStartReply = { viewModel.startReply() },
+            onCancelReply = { viewModel.cancelReply() },
+            onSendReply = { viewModel.sendReply() },
+            onDelete = { viewModel.deleteEmail(email) },
+            onDismiss = { viewModel.closeEmail() },
         )
     }
 
@@ -111,14 +120,14 @@ fun EmailScreen(
             }
 
             else -> {
-                LazyColumn(
+                androidx.compose.foundation.lazy.LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(
                         top = padding.calculateTopPadding(),
                         bottom = padding.calculateBottomPadding()
                     )
                 ) {
-                    items(uiState.emails, key = { it.id }) { email ->
+                    androidx.compose.foundation.lazy.items(uiState.emails, key = { it.id }) { email ->
                         EmailListItem(
                             email = email,
                             onClick = { viewModel.openEmail(email) }
@@ -133,7 +142,6 @@ fun EmailScreen(
             }
         }
 
-        // Foutmelding banner
         uiState.error?.let { error ->
             if (uiState.emails.isNotEmpty()) {
                 Snackbar(
@@ -192,12 +200,8 @@ fun EmailListItem(email: EmailMessage, onClick: () -> Unit) {
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Avatar
         Box(
-            modifier = Modifier
-                .size(44.dp)
-                .clip(CircleShape)
-                .background(avatarColor),
+            modifier = Modifier.size(44.dp).clip(CircleShape).background(avatarColor),
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -250,13 +254,10 @@ fun EmailListItem(email: EmailMessage, onClick: () -> Unit) {
             )
         }
 
-        // Ongelezen bolletje
         if (!email.isRead) {
             Spacer(Modifier.width(8.dp))
             Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .clip(CircleShape)
+                modifier = Modifier.size(8.dp).clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primary)
             )
         }
@@ -268,8 +269,39 @@ fun EmailListItem(email: EmailMessage, onClick: () -> Unit) {
 fun EmailDetailSheet(
     email: EmailMessage,
     isLoadingBody: Boolean,
+    isReplying: Boolean,
+    replyText: String,
+    isSendingReply: Boolean,
+    isDeleting: Boolean,
+    onReplyTextChange: (String) -> Unit,
+    onStartReply: () -> Unit,
+    onCancelReply: () -> Unit,
+    onSendReply: () -> Unit,
+    onDelete: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("E-mail verwijderen?") },
+            text = { Text("De e-mail wordt naar de prullenbak verplaatst.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirm = false
+                        onDelete()
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) { Text("Verwijderen") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) { Text("Annuleren") }
+            }
+        )
+    }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(),
@@ -289,7 +321,7 @@ fun EmailDetailSheet(
             )
             Spacer(Modifier.height(12.dp))
 
-            // Van / Aan / Datum
+            // Meta
             EmailMetaRow("Van", email.fromName?.let { "$it <${email.from}>" } ?: email.from)
             email.to?.let { EmailMetaRow("Aan", it) }
             EmailMetaRow("Datum", formatEmailDateFull(email.date))
@@ -308,16 +340,84 @@ fun EmailDetailSheet(
                     Text(
                         email.snippet,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f)
                     )
                 } else {
                     Text(
                         text = bodyText,
                         style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier
-                            .weight(1f)
-                            .verticalScroll(rememberScrollState())
+                        modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())
                     )
+                }
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
+            // Actieknoppen
+            if (!isReplying) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onStartReply,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.Reply, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Beantwoorden")
+                    }
+                    OutlinedButton(
+                        onClick = { showDeleteConfirm = true },
+                        enabled = !isDeleting,
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        if (isDeleting) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        } else {
+                            Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Verwijderen")
+                        }
+                    }
+                }
+            } else {
+                // Reply compose
+                OutlinedTextField(
+                    value = replyText,
+                    onValueChange = onReplyTextChange,
+                    label = { Text("Jouw antwoord") },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp),
+                    minLines = 4,
+                )
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onCancelReply,
+                        modifier = Modifier.weight(1f)
+                    ) { Text("Annuleren") }
+                    Button(
+                        onClick = onSendReply,
+                        enabled = replyText.isNotBlank() && !isSendingReply,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        if (isSendingReply) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        } else {
+                            Icon(Icons.Default.Send, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Versturen")
+                        }
+                    }
                 }
             }
         }

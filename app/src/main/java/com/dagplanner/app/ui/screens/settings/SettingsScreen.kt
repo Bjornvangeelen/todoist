@@ -81,7 +81,8 @@ fun SettingsScreen(
             .requestEmail()
             .requestScopes(
                 Scope(CalendarScopes.CALENDAR),
-                Scope(GmailScopes.GMAIL_READONLY),
+                Scope(GmailScopes.GMAIL_MODIFY),
+                Scope(GmailScopes.GMAIL_SEND),
             )
             .build()
         val client = GoogleSignIn.getClient(context, gso)
