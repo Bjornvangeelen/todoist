@@ -27,7 +27,7 @@ class ShoppingViewModel @Inject constructor(
 ) : ViewModel() {
 
     val householdId: StateFlow<String?> = userPreferences.householdId
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
