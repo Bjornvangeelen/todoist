@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.dagplanner.app.data.preferences.UserPreferences
 import com.dagplanner.app.data.repository.CalendarRepository
 import com.dagplanner.app.data.repository.FirestoreShoppingRepository
+import com.dagplanner.app.data.repository.TaskRepository
 import com.dagplanner.app.ui.theme.AppTheme
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +29,7 @@ class SettingsViewModel @Inject constructor(
     private val userPreferences: UserPreferences,
     private val calendarRepository: CalendarRepository,
     private val firestoreShoppingRepository: FirestoreShoppingRepository,
+    private val taskRepository: TaskRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -109,6 +111,10 @@ class SettingsViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isHouseholdLoading = true, error = null)
             try {
                 firestoreShoppingRepository.createHousehold(code)
+                val localItems = taskRepository.getShoppingItemsOnce()
+                localItems.forEach { item ->
+                    firestoreShoppingRepository.upsertItem(code, item)
+                }
                 userPreferences.setHouseholdId(code)
                 _uiState.value = _uiState.value.copy(
                     isHouseholdLoading = false,

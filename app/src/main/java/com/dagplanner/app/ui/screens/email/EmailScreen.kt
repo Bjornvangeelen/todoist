@@ -3,6 +3,8 @@ package com.dagplanner.app.ui.screens.email
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -120,14 +122,14 @@ fun EmailScreen(
             }
 
             else -> {
-                androidx.compose.foundation.lazy.LazyColumn(
+                LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(
                         top = padding.calculateTopPadding(),
                         bottom = padding.calculateBottomPadding()
                     )
                 ) {
-                    androidx.compose.foundation.lazy.items(uiState.emails, key = { it.id }) { email ->
+                    items(uiState.emails, key = { it.id }) { email ->
                         EmailListItem(
                             email = email,
                             onClick = { viewModel.openEmail(email) }
