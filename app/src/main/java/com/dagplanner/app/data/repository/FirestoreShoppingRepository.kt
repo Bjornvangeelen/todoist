@@ -21,10 +21,11 @@ class FirestoreShoppingRepository @Inject constructor(
     private fun shoppingCollection(householdCode: String) =
         firestore.collection("households").document(householdCode).collection("shopping")
 
-    fun getItems(householdCode: String): Flow<List<Task>> = callbackFlow {
+    fun getItems(householdCode: String, onError: ((Exception) -> Unit)? = null): Flow<List<Task>> = callbackFlow {
         val listener = shoppingCollection(householdCode)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
+                    onError?.invoke(error)
                     return@addSnapshotListener
                 }
                 val items = snapshot?.documents?.mapNotNull { it.toTask() } ?: emptyList()

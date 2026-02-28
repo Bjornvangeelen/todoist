@@ -29,11 +29,16 @@ class ShoppingViewModel @Inject constructor(
     val householdId: StateFlow<String?> = userPreferences.householdId
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val items: StateFlow<List<Task>> = userPreferences.householdId
         .flatMapLatest { householdId ->
             if (householdId != null) {
-                firestoreRepository.getItems(householdId)
+                firestoreRepository.getItems(householdId) { error ->
+                    _error.value = "Laden mislukt: ${error.localizedMessage}"
+                }
             } else {
                 repository.getTasksByType(TaskType.SHOPPING)
             }
@@ -42,9 +47,6 @@ class ShoppingViewModel @Inject constructor(
 
     private val _editorState = MutableStateFlow(TaskEditorState())
     val editorState: StateFlow<TaskEditorState> = _editorState.asStateFlow()
-
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error.asStateFlow()
 
     fun openNewItemEditor() {
         _editorState.value = TaskEditorState(isOpen = true, taskType = TaskType.SHOPPING)

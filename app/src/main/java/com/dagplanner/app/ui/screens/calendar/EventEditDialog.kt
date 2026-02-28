@@ -3,15 +3,19 @@ package com.dagplanner.app.ui.screens.calendar
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import java.time.LocalDate
 import java.time.LocalTime
@@ -28,6 +32,7 @@ fun EventEditDialog(
     onFieldUpdate: (EventEditorState.() -> EventEditorState) -> Unit,
 ) {
     val isEditing = state.eventToEdit != null
+    val context = LocalContext.current
 
     var showDatePicker by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
@@ -190,6 +195,17 @@ fun EventEditDialog(
                     onValueChange = { onFieldUpdate { copy(location = it) } },
                     label = { Text("Locatie (optioneel)") },
                     leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
+                    trailingIcon = {
+                        IconButton(onClick = {
+                            val query = state.location.trim().ifBlank { "" }
+                            val uri = if (query.isNotBlank())
+                                Uri.parse("https://www.google.com/maps/search/?q=${Uri.encode(query)}")
+                            else Uri.parse("https://maps.google.com/")
+                            context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+                        }) {
+                            Icon(Icons.Default.Map, contentDescription = "Bekijk op kaart")
+                        }
+                    },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )

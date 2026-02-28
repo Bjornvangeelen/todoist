@@ -4,13 +4,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,18 +21,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.dagplanner.app.data.model.CalendarEvent
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle
 import java.util.Locale
+
+enum class AgendaViewMode { DAY, WEEK }
 
 data class DayAgendaItem(
     val date: LocalDate,
@@ -46,6 +51,11 @@ fun AgendaScreen(
     val monthEvents by viewModel.monthEvents.collectAsState()
     val editorState by viewModel.editorState.collectAsState()
 
+    var viewMode by remember { mutableStateOf(AgendaViewMode.DAY) }
+    val today = LocalDate.now()
+    var weekStart by remember { mutableStateOf(today.with(DayOfWeek.MONDAY)) }
+    val coroutineScope = rememberCoroutineScope()
+
     if (editorState.isOpen) {
         EventEditDialog(
             state = editorState,
@@ -56,37 +66,67 @@ fun AgendaScreen(
         )
     }
 
-    // Bouw agenda voor de komende 3 maanden
     val agendaItems = remember(monthEvents, uiState.displayedMonth) {
         buildAgendaItems(monthEvents, uiState.displayedMonth)
     }
 
     val listState = rememberLazyListState()
-    val today = LocalDate.now()
 
     // Scroll naar vandaag bij eerste keer laden
     LaunchedEffect(agendaItems) {
         val todayIndex = agendaItems.indexOfFirst { it.date >= today }
-        if (todayIndex >= 0) {
-            listState.animateScrollToItem(todayIndex)
-        }
+        if (todayIndex >= 0) listState.scrollToItem(todayIndex)
+    }
+
+    // Zorg dat evenementen geladen worden voor de zichtbare week
+    LaunchedEffect(weekStart) {
+        viewModel.selectDate(weekStart)
     }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Dagoverzicht") },
-                actions = {
-                    IconButton(onClick = {
-                        // Scroll terug naar vandaag
-                    }) {
-                        Icon(Icons.Default.CalendarToday, contentDescription = "Vandaag")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+            Column {
+                TopAppBar(
+                    title = {
+                        Text(
+                            if (viewMode == AgendaViewMode.DAY) "Dagoverzicht"
+                            else "Planningoverzicht"
+                        )
+                    },
+                    actions = {
+                        IconButton(onClick = {
+                            when (viewMode) {
+                                AgendaViewMode.DAY -> {
+                                    coroutineScope.launch {
+                                        val todayIndex = agendaItems.indexOfFirst { it.date >= today }
+                                        if (todayIndex >= 0) listState.animateScrollToItem(todayIndex)
+                                    }
+                                }
+                                AgendaViewMode.WEEK -> {
+                                    weekStart = today.with(DayOfWeek.MONDAY)
+                                }
+                            }
+                        }) {
+                            Icon(Icons.Default.CalendarToday, contentDescription = "Vandaag")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
                 )
-            )
+                TabRow(selectedTabIndex = viewMode.ordinal) {
+                    Tab(
+                        selected = viewMode == AgendaViewMode.DAY,
+                        onClick = { viewMode = AgendaViewMode.DAY },
+                        text = { Text("Dag") }
+                    )
+                    Tab(
+                        selected = viewMode == AgendaViewMode.WEEK,
+                        onClick = { viewMode = AgendaViewMode.WEEK },
+                        text = { Text("Planning") }
+                    )
+                }
+            }
         },
         floatingActionButton = {
             if (uiState.googleAccountName != null) {
@@ -97,11 +137,8 @@ fun AgendaScreen(
         }
     ) { padding ->
         if (uiState.googleAccountName == null) {
-            // Geen koppeling
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
+                modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -122,34 +159,47 @@ fun AgendaScreen(
                         "Koppel je Google Agenda via Instellingen\nom je evenementen te bekijken.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        textAlign = TextAlign.Center
                     )
                 }
             }
-        } else if (agendaItems.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
         } else {
-            LazyColumn(
-                state = listState,
-                contentPadding = PaddingValues(
-                    start = 16.dp, end = 16.dp,
-                    top = padding.calculateTopPadding() + 8.dp,
-                    bottom = padding.calculateBottomPadding() + 16.dp
-                ),
-                verticalArrangement = Arrangement.spacedBy(0.dp)
-            ) {
-                items(agendaItems, key = { it.date.toString() }) { dayItem ->
-                    AgendaDaySection(
-                        dayItem = dayItem,
-                        isToday = dayItem.date == today,
-                        onEventClick = { viewModel.openEditEventEditor(it) }
+            when (viewMode) {
+                AgendaViewMode.DAY -> {
+                    if (agendaItems.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize().padding(padding),
+                            contentAlignment = Alignment.Center
+                        ) { CircularProgressIndicator() }
+                    } else {
+                        LazyColumn(
+                            state = listState,
+                            contentPadding = PaddingValues(
+                                start = 16.dp, end = 16.dp,
+                                top = padding.calculateTopPadding() + 8.dp,
+                                bottom = padding.calculateBottomPadding() + 16.dp
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(0.dp)
+                        ) {
+                            items(agendaItems, key = { it.date.toString() }) { dayItem ->
+                                AgendaDaySection(
+                                    dayItem = dayItem,
+                                    isToday = dayItem.date == today,
+                                    onEventClick = { viewModel.openEditEventEditor(it) }
+                                )
+                            }
+                        }
+                    }
+                }
+                AgendaViewMode.WEEK -> {
+                    WeekPlanningView(
+                        weekStart = weekStart,
+                        monthEvents = monthEvents,
+                        today = today,
+                        padding = padding,
+                        onPreviousWeek = { weekStart = weekStart.minusWeeks(1) },
+                        onNextWeek = { weekStart = weekStart.plusWeeks(1) },
+                        onEventClick = { viewModel.openEditEventEditor(it) },
                     )
                 }
             }
@@ -158,10 +208,95 @@ fun AgendaScreen(
 }
 
 @Composable
+private fun WeekPlanningView(
+    weekStart: LocalDate,
+    monthEvents: List<CalendarEvent>,
+    today: LocalDate,
+    padding: PaddingValues,
+    onPreviousWeek: () -> Unit,
+    onNextWeek: () -> Unit,
+    onEventClick: (CalendarEvent) -> Unit,
+) {
+    val weekEnd = weekStart.plusDays(6)
+    val eventsByDate = remember(monthEvents) { monthEvents.groupBy { it.startDate } }
+    val weekDays = (0..6).map { weekStart.plusDays(it.toLong()) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(top = padding.calculateTopPadding())
+    ) {
+        WeekNavigationHeader(
+            weekStart = weekStart,
+            weekEnd = weekEnd,
+            onPreviousWeek = onPreviousWeek,
+            onNextWeek = onNextWeek,
+        )
+        HorizontalDivider()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
+                .padding(bottom = padding.calculateBottomPadding() + 16.dp)
+        ) {
+            weekDays.forEach { date ->
+                val dayEvents = (eventsByDate[date] ?: emptyList()).sortedWith(
+                    compareBy({ !it.isAllDay }, { it.startTime })
+                )
+                AgendaDaySection(
+                    dayItem = DayAgendaItem(date = date, events = dayEvents),
+                    isToday = date == today,
+                    onEventClick = onEventClick,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeekNavigationHeader(
+    weekStart: LocalDate,
+    weekEnd: LocalDate,
+    onPreviousWeek: () -> Unit,
+    onNextWeek: () -> Unit,
+) {
+    val locale = Locale("nl")
+    val startFormatter = DateTimeFormatter.ofPattern(
+        if (weekStart.month == weekEnd.month) "d" else "d MMM",
+        locale
+    )
+    val endFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", locale)
+    val rangeText = "${weekStart.format(startFormatter)} – ${weekEnd.format(endFormatter)}"
+        .replaceFirstChar { it.uppercase() }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        IconButton(onClick = onPreviousWeek) {
+            Icon(Icons.Default.KeyboardArrowLeft, contentDescription = "Vorige week")
+        }
+        Text(
+            text = rangeText,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        IconButton(onClick = onNextWeek) {
+            Icon(Icons.Default.KeyboardArrowRight, contentDescription = "Volgende week")
+        }
+    }
+}
+
+@Composable
 fun AgendaDaySection(
     dayItem: DayAgendaItem,
     isToday: Boolean,
-    onEventClick: (com.dagplanner.app.data.model.CalendarEvent) -> Unit = {},
+    onEventClick: (CalendarEvent) -> Unit = {},
 ) {
     val date = dayItem.date
     val dayFormatter = DateTimeFormatter.ofPattern("d", Locale("nl"))
@@ -174,7 +309,7 @@ fun AgendaDaySection(
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.Top
     ) {
-        // Datumkolom (links, zoals Google Agenda)
+        // Datumkolom (links)
         Column(
             modifier = Modifier.width(56.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -328,7 +463,6 @@ private fun buildAgendaItems(
     var current = startDate
     while (!current.isAfter(endDate)) {
         val dayEvents = eventsByDate[current] ?: emptyList()
-        // Toon dagen met evenementen altijd; toon lege dagen alleen als het vandaag is of komende 7 dagen
         if (dayEvents.isNotEmpty() || current == today || !current.isBefore(today.minusDays(1))) {
             items.add(DayAgendaItem(date = current, events = dayEvents.sortedWith(
                 compareBy({ !it.isAllDay }, { it.startTime })
