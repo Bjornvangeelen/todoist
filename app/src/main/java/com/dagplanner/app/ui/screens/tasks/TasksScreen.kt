@@ -1,5 +1,6 @@
 package com.dagplanner.app.ui.screens.tasks
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -8,13 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Circle
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -39,6 +34,7 @@ fun TasksScreen(
 ) {
     val tasks by viewModel.tasks.collectAsState()
     val editorState by viewModel.editorState.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
 
     if (editorState.isOpen) {
         TaskEditDialog(
@@ -52,7 +48,6 @@ fun TasksScreen(
 
     val today = LocalDate.now()
 
-    // Groepeer taken
     val overdue = tasks.filter { !it.isCompleted && it.deadline != null && it.deadline.isBefore(today) }
     val todayTasks = tasks.filter { !it.isCompleted && it.date == today && (it.deadline == null || !it.deadline.isBefore(today)) }
     val upcoming = tasks.filter {
@@ -64,12 +59,33 @@ fun TasksScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Taken") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+            Column {
+                TopAppBar(
+                    title = { Text("Taken") },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
                 )
-            )
+                // Zoekbalk
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { viewModel.setSearchQuery(it) },
+                    placeholder = { Text("Zoeken in taken...") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { viewModel.setSearchQuery("") }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Wis zoekopdracht")
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(24.dp),
+                )
+            }
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { viewModel.openNewTaskEditor() }) {
@@ -91,13 +107,14 @@ fun TasksScreen(
                     )
                     Spacer(Modifier.height(16.dp))
                     Text(
-                        "Nog geen taken",
+                        if (searchQuery.isNotEmpty()) "Geen taken gevonden" else "Nog geen taken",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "Tik op + om je eerste taak toe te voegen.",
+                        if (searchQuery.isNotEmpty()) "Probeer een andere zoekterm."
+                        else "Tik op + om je eerste taak toe te voegen.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -108,7 +125,7 @@ fun TasksScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
                     start = 16.dp, end = 16.dp,
-                    top = padding.calculateTopPadding() + 8.dp,
+                    top = padding.calculateTopPadding() + 4.dp,
                     bottom = padding.calculateBottomPadding() + 80.dp
                 ),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -116,7 +133,12 @@ fun TasksScreen(
                 if (overdue.isNotEmpty()) {
                     item { TaskGroupHeader("Verlopen", color = MaterialTheme.colorScheme.error) }
                     items(overdue, key = { it.id }) { task ->
-                        TaskCard(task = task, onToggle = { viewModel.toggleComplete(task) }, onClick = { viewModel.openEditTaskEditor(task) })
+                        SwipeableTaskItem(
+                            task = task,
+                            onToggle = { viewModel.toggleComplete(task) },
+                            onClick = { viewModel.openEditTaskEditor(task) },
+                            onDelete = { viewModel.deleteTask(task) }
+                        )
                     }
                     item { Spacer(Modifier.height(8.dp)) }
                 }
@@ -124,7 +146,12 @@ fun TasksScreen(
                 if (todayTasks.isNotEmpty()) {
                     item { TaskGroupHeader("Vandaag") }
                     items(todayTasks, key = { it.id }) { task ->
-                        TaskCard(task = task, onToggle = { viewModel.toggleComplete(task) }, onClick = { viewModel.openEditTaskEditor(task) })
+                        SwipeableTaskItem(
+                            task = task,
+                            onToggle = { viewModel.toggleComplete(task) },
+                            onClick = { viewModel.openEditTaskEditor(task) },
+                            onDelete = { viewModel.deleteTask(task) }
+                        )
                     }
                     item { Spacer(Modifier.height(8.dp)) }
                 }
@@ -132,7 +159,12 @@ fun TasksScreen(
                 if (upcoming.isNotEmpty()) {
                     item { TaskGroupHeader("Gepland") }
                     items(upcoming, key = { it.id }) { task ->
-                        TaskCard(task = task, onToggle = { viewModel.toggleComplete(task) }, onClick = { viewModel.openEditTaskEditor(task) })
+                        SwipeableTaskItem(
+                            task = task,
+                            onToggle = { viewModel.toggleComplete(task) },
+                            onClick = { viewModel.openEditTaskEditor(task) },
+                            onDelete = { viewModel.deleteTask(task) }
+                        )
                     }
                     item { Spacer(Modifier.height(8.dp)) }
                 }
@@ -140,7 +172,12 @@ fun TasksScreen(
                 if (noDate.isNotEmpty()) {
                     item { TaskGroupHeader("Geen datum") }
                     items(noDate, key = { it.id }) { task ->
-                        TaskCard(task = task, onToggle = { viewModel.toggleComplete(task) }, onClick = { viewModel.openEditTaskEditor(task) })
+                        SwipeableTaskItem(
+                            task = task,
+                            onToggle = { viewModel.toggleComplete(task) },
+                            onClick = { viewModel.openEditTaskEditor(task) },
+                            onDelete = { viewModel.deleteTask(task) }
+                        )
                     }
                     item { Spacer(Modifier.height(8.dp)) }
                 }
@@ -148,12 +185,76 @@ fun TasksScreen(
                 if (completed.isNotEmpty()) {
                     item { TaskGroupHeader("Afgerond", color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     items(completed, key = { it.id }) { task ->
-                        TaskCard(task = task, onToggle = { viewModel.toggleComplete(task) }, onClick = { viewModel.openEditTaskEditor(task) })
+                        SwipeableTaskItem(
+                            task = task,
+                            onToggle = { viewModel.toggleComplete(task) },
+                            onClick = { viewModel.openEditTaskEditor(task) },
+                            onDelete = { viewModel.deleteTask(task) }
+                        )
                     }
                 }
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SwipeableTaskItem(
+    task: Task,
+    onToggle: () -> Unit,
+    onClick: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            when (value) {
+                SwipeToDismissBoxValue.StartToEnd -> { onToggle(); false }
+                SwipeToDismissBoxValue.EndToStart -> { onDelete(); false }
+                else -> false
+            }
+        },
+        positionalThreshold = { it * 0.4f },
+    )
+
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = {
+            val direction = dismissState.dismissDirection
+            val color by animateColorAsState(
+                targetValue = when (dismissState.targetValue) {
+                    SwipeToDismissBoxValue.StartToEnd -> Color(0xFF4CAF50)
+                    SwipeToDismissBoxValue.EndToStart -> Color(0xFFF44336)
+                    else -> Color.Transparent
+                },
+                label = "swipeColor"
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(color)
+                    .padding(horizontal = 20.dp),
+                contentAlignment = when (direction) {
+                    SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
+                    else -> Alignment.CenterEnd
+                }
+            ) {
+                when (direction) {
+                    SwipeToDismissBoxValue.StartToEnd -> Icon(
+                        Icons.Default.Check, contentDescription = "Afgerond", tint = Color.White
+                    )
+                    SwipeToDismissBoxValue.EndToStart -> Icon(
+                        Icons.Default.Delete, contentDescription = "Verwijderen", tint = Color.White
+                    )
+                    else -> {}
+                }
+            }
+        },
+        content = {
+            TaskCard(task = task, onToggle = onToggle, onClick = onClick)
+        }
+    )
 }
 
 @Composable
@@ -194,7 +295,6 @@ fun TaskCard(
                 .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.Top
         ) {
-            // Prioriteitsstreep links
             if (task.priority != TaskPriority.NONE) {
                 Box(
                     modifier = Modifier
@@ -206,7 +306,6 @@ fun TaskCard(
                 Spacer(Modifier.width(10.dp))
             }
 
-            // Checkbox
             IconButton(
                 onClick = onToggle,
                 modifier = Modifier.size(32.dp)
@@ -223,7 +322,6 @@ fun TaskCard(
             Spacer(Modifier.width(8.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                // Titel
                 Text(
                     text = task.title,
                     style = MaterialTheme.typography.bodyMedium,
@@ -237,12 +335,10 @@ fun TaskCard(
 
                 Spacer(Modifier.height(4.dp))
 
-                // Metadata rij
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Datum + tijd
                     if (task.date != null) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
@@ -265,19 +361,15 @@ fun TaskCard(
                         }
                     }
 
-                    // Deadline (als afwijkend van datum)
                     if (task.deadline != null && task.deadline != task.date) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "deadline ${formatTaskDate(task.deadline)}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (isOverdue) MaterialTheme.colorScheme.error
-                                else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        Text(
+                            text = "deadline ${formatTaskDate(task.deadline)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (isOverdue) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
 
-                    // Label
                     task.label?.let { label ->
                         Text(
                             text = label,
@@ -291,7 +383,6 @@ fun TaskCard(
                     }
                 }
 
-                // Locatie
                 if (!task.location.isNullOrBlank()) {
                     Spacer(Modifier.height(2.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -313,7 +404,6 @@ fun TaskCard(
                 }
             }
 
-            // Herinnering icoon
             if (task.reminder != null) {
                 Icon(
                     Icons.Default.Notifications,

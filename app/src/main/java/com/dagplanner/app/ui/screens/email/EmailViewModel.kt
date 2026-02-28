@@ -15,6 +15,9 @@ import javax.inject.Inject
 data class EmailUiState(
     val emails: List<EmailMessage> = emptyList(),
     val isLoading: Boolean = false,
+    val isLoadingMore: Boolean = false,
+    val hasMore: Boolean = false,
+    val nextPageToken: String? = null,
     val error: String? = null,
     val accountName: String? = null,
     val selectedEmail: EmailMessage? = null,
@@ -50,10 +53,47 @@ class EmailViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             val result = repository.fetchInbox(account)
-            _uiState.value = _uiState.value.copy(
-                isLoading = false,
-                emails = result.getOrDefault(emptyList()),
-                error = result.exceptionOrNull()?.message,
+            result.fold(
+                onSuccess = { page ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        emails = page.emails,
+                        nextPageToken = page.nextPageToken,
+                        hasMore = page.nextPageToken != null,
+                    )
+                },
+                onFailure = { ex ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = ex.message,
+                    )
+                }
+            )
+        }
+    }
+
+    fun loadMore() {
+        val account = _uiState.value.accountName ?: return
+        val token = _uiState.value.nextPageToken ?: return
+        if (_uiState.value.isLoadingMore) return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoadingMore = true)
+            val result = repository.fetchInbox(account, pageToken = token)
+            result.fold(
+                onSuccess = { page ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingMore = false,
+                        emails = _uiState.value.emails + page.emails,
+                        nextPageToken = page.nextPageToken,
+                        hasMore = page.nextPageToken != null,
+                    )
+                },
+                onFailure = { ex ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingMore = false,
+                        error = ex.message,
+                    )
+                }
             )
         }
     }

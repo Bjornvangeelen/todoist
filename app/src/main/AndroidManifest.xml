@@ -11,6 +11,9 @@
     <!-- Vibratie voor notificaties -->
     <uses-permission android:name="android.permission.VIBRATE" />
 
+    <!-- Herinneringen na herstart apparaat -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <application
         android:name=".DagPlannerApp"
         android:allowBackup="true"

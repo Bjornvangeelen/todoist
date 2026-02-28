@@ -120,6 +120,9 @@ dependencies {
     // Image loading
     implementation(libs.coil.compose)
 
+    // WorkManager
+    implementation(libs.work.runtime.ktx)
+
     // Permissions
     implementation(libs.accompanist.permissions)
 

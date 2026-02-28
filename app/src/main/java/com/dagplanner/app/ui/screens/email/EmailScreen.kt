@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Reply
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,11 +68,7 @@ fun EmailScreen(
                             onClick = { viewModel.loadInbox() },
                             enabled = !uiState.isLoading
                         ) {
-                            if (uiState.isLoading) {
-                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                            } else {
-                                Icon(Icons.Default.Refresh, contentDescription = "Vernieuwen")
-                            }
+                            Icon(Icons.Default.Refresh, contentDescription = "Vernieuwen")
                         }
                     }
                 },
@@ -89,7 +86,7 @@ fun EmailScreen(
                 ) { CircularProgressIndicator() }
             }
 
-            uiState.error != null -> {
+            uiState.error != null && uiState.emails.isEmpty() -> {
                 Box(
                     modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
                     contentAlignment = Alignment.Center
@@ -122,34 +119,54 @@ fun EmailScreen(
             }
 
             else -> {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(
-                        top = padding.calculateTopPadding(),
-                        bottom = padding.calculateBottomPadding()
-                    )
+                PullToRefreshBox(
+                    isRefreshing = uiState.isLoading,
+                    onRefresh = { viewModel.loadInbox() },
+                    modifier = Modifier.fillMaxSize().padding(padding),
                 ) {
-                    items(uiState.emails, key = { it.id }) { email ->
-                        EmailListItem(
-                            email = email,
-                            onClick = { viewModel.openEmail(email) }
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(start = 72.dp),
-                            thickness = 0.5.dp,
-                            color = MaterialTheme.colorScheme.outlineVariant
-                        )
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        items(uiState.emails, key = { it.id }) { email ->
+                            EmailListItem(
+                                email = email,
+                                onClick = { viewModel.openEmail(email) }
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(start = 72.dp),
+                                thickness = 0.5.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant
+                            )
+                        }
+
+                        // Meer laden
+                        if (uiState.hasMore) {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (uiState.isLoadingMore) {
+                                        CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                                    } else {
+                                        OutlinedButton(onClick = { viewModel.loadMore() }) {
+                                            Text("Meer laden")
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
-            }
-        }
 
-        uiState.error?.let { error ->
-            if (uiState.emails.isNotEmpty()) {
-                Snackbar(
-                    modifier = Modifier.padding(padding),
-                    action = { TextButton(onClick = { viewModel.clearError() }) { Text("OK") } }
-                ) { Text(error) }
+                uiState.error?.let { error ->
+                    if (uiState.emails.isNotEmpty()) {
+                        Snackbar(
+                            modifier = Modifier.padding(padding),
+                            action = { TextButton(onClick = { viewModel.clearError() }) { Text("OK") } }
+                        ) { Text(error) }
+                    }
+                }
             }
         }
     }
@@ -315,7 +332,6 @@ fun EmailDetailSheet(
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 24.dp)
         ) {
-            // Onderwerp
             Text(
                 text = email.subject,
                 style = MaterialTheme.typography.titleMedium,
@@ -323,14 +339,12 @@ fun EmailDetailSheet(
             )
             Spacer(Modifier.height(12.dp))
 
-            // Meta
             EmailMetaRow("Van", email.fromName?.let { "$it <${email.from}>" } ?: email.from)
             email.to?.let { EmailMetaRow("Aan", it) }
             EmailMetaRow("Datum", formatEmailDateFull(email.date))
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
-            // Berichttekst
             if (isLoadingBody) {
                 Box(
                     modifier = Modifier.fillMaxWidth().weight(1f),
@@ -356,7 +370,6 @@ fun EmailDetailSheet(
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
-            // Actieknoppen
             if (!isReplying) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -386,7 +399,6 @@ fun EmailDetailSheet(
                     }
                 }
             } else {
-                // Reply compose
                 OutlinedTextField(
                     value = replyText,
                     onValueChange = onReplyTextChange,

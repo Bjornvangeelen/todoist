@@ -7,6 +7,7 @@ import com.dagplanner.app.data.model.TaskType
 import com.dagplanner.app.data.preferences.UserPreferences
 import com.dagplanner.app.data.repository.FirestoreShoppingRepository
 import com.dagplanner.app.data.repository.TaskRepository
+import com.dagplanner.app.notification.ReminderScheduler
 import com.dagplanner.app.ui.screens.tasks.TaskEditorState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -14,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -24,6 +26,7 @@ class ShoppingViewModel @Inject constructor(
     private val repository: TaskRepository,
     private val firestoreRepository: FirestoreShoppingRepository,
     private val userPreferences: UserPreferences,
+    private val reminderScheduler: ReminderScheduler,
 ) : ViewModel() {
 
     val householdId: StateFlow<String?> = userPreferences.householdId
@@ -32,8 +35,11 @@ class ShoppingViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
     @OptIn(ExperimentalCoroutinesApi::class)
-    val items: StateFlow<List<Task>> = userPreferences.householdId
+    private val allItems: StateFlow<List<Task>> = userPreferences.householdId
         .flatMapLatest { householdId ->
             if (householdId != null) {
                 firestoreRepository.getItems(householdId) { error ->
@@ -45,8 +51,20 @@ class ShoppingViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val items: StateFlow<List<Task>> = combine(allItems, _searchQuery) { items, query ->
+        if (query.isBlank()) items
+        else items.filter {
+            it.title.contains(query, ignoreCase = true) ||
+            it.label?.contains(query, ignoreCase = true) == true
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     private val _editorState = MutableStateFlow(TaskEditorState())
     val editorState: StateFlow<TaskEditorState> = _editorState.asStateFlow()
+
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
 
     fun openNewItemEditor() {
         _editorState.value = TaskEditorState(isOpen = true, taskType = TaskType.SHOPPING)
@@ -103,6 +121,7 @@ class ShoppingViewModel @Inject constructor(
                 } else {
                     repository.upsertTask(item)
                 }
+                reminderScheduler.schedule(item)
                 closeEditor()
             } catch (e: Exception) {
                 _editorState.value = s.copy(isSaving = false)
@@ -114,6 +133,7 @@ class ShoppingViewModel @Inject constructor(
     fun deleteItem(item: Task) {
         viewModelScope.launch {
             try {
+                reminderScheduler.cancel(item.id)
                 val hid = householdId.value
                 if (hid != null) {
                     firestoreRepository.deleteItem(hid, item)

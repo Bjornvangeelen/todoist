@@ -6,11 +6,14 @@ import com.dagplanner.app.data.model.Task
 import com.dagplanner.app.data.model.TaskPriority
 import com.dagplanner.app.data.model.TaskType
 import com.dagplanner.app.data.repository.TaskRepository
+import com.dagplanner.app.notification.ReminderScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -34,14 +37,28 @@ data class TaskEditorState(
 
 @HiltViewModel
 class TaskViewModel @Inject constructor(
-    private val repository: TaskRepository
+    private val repository: TaskRepository,
+    private val reminderScheduler: ReminderScheduler,
 ) : ViewModel() {
 
-    val tasks: StateFlow<List<Task>> = repository.getTasksByType(TaskType.TASK)
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    private val allTasks: StateFlow<List<Task>> = repository.getTasksByType(TaskType.TASK)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val tasks: StateFlow<List<Task>> = combine(allTasks, _searchQuery) { tasks, query ->
+        if (query.isBlank()) tasks
+        else tasks.filter { it.title.contains(query, ignoreCase = true) || it.label?.contains(query, ignoreCase = true) == true }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _editorState = MutableStateFlow(TaskEditorState())
     val editorState: StateFlow<TaskEditorState> = _editorState.asStateFlow()
+
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
 
     fun openNewTaskEditor() {
         _editorState.value = TaskEditorState(isOpen = true, taskType = TaskType.TASK)
@@ -88,12 +105,14 @@ class TaskViewModel @Inject constructor(
                 reminder = s.reminder,
             )
             repository.upsertTask(task)
+            reminderScheduler.schedule(task)
             closeEditor()
         }
     }
 
     fun deleteTask(task: Task) {
         viewModelScope.launch {
+            reminderScheduler.cancel(task.id)
             repository.deleteTask(task)
             closeEditor()
         }
