@@ -25,7 +25,7 @@ class FirestoreShoppingRepository @Inject constructor(
         val listener = shoppingCollection(householdCode)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    close(error)
+                    trySend(emptyList())
                     return@addSnapshotListener
                 }
                 val items = snapshot?.documents?.mapNotNull { it.toTask() } ?: emptyList()
