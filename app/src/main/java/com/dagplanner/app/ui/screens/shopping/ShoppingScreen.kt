@@ -27,6 +27,15 @@ fun ShoppingScreen(
 ) {
     val items by viewModel.items.collectAsState()
     val editorState by viewModel.editorState.collectAsState()
+    val error by viewModel.error.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(error) {
+        if (error != null) {
+            snackbarHostState.showSnackbar(error!!)
+            viewModel.clearError()
+        }
+    }
 
     if (editorState.isOpen) {
         TaskEditDialog(
@@ -62,7 +71,8 @@ fun ShoppingScreen(
             FloatingActionButton(onClick = { viewModel.openNewItemEditor() }) {
                 Icon(Icons.Default.Add, contentDescription = "Nieuw artikel")
             }
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         if (items.isEmpty()) {
             Box(

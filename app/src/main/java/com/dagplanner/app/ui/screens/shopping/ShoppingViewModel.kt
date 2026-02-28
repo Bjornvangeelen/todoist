@@ -43,6 +43,9 @@ class ShoppingViewModel @Inject constructor(
     private val _editorState = MutableStateFlow(TaskEditorState())
     val editorState: StateFlow<TaskEditorState> = _editorState.asStateFlow()
 
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
+
     fun openNewItemEditor() {
         _editorState.value = TaskEditorState(isOpen = true, taskType = TaskType.SHOPPING)
     }
@@ -65,6 +68,10 @@ class ShoppingViewModel @Inject constructor(
 
     fun closeEditor() {
         _editorState.value = TaskEditorState()
+    }
+
+    fun clearError() {
+        _error.value = null
     }
 
     fun updateField(update: TaskEditorState.() -> TaskEditorState) {
@@ -97,17 +104,22 @@ class ShoppingViewModel @Inject constructor(
                 closeEditor()
             } catch (e: Exception) {
                 _editorState.value = s.copy(isSaving = false)
+                _error.value = "Opslaan mislukt: ${e.localizedMessage}"
             }
         }
     }
 
     fun deleteItem(item: Task) {
         viewModelScope.launch {
-            val hid = householdId.value
-            if (hid != null) {
-                firestoreRepository.deleteItem(hid, item)
-            } else {
-                repository.deleteTask(item)
+            try {
+                val hid = householdId.value
+                if (hid != null) {
+                    firestoreRepository.deleteItem(hid, item)
+                } else {
+                    repository.deleteTask(item)
+                }
+            } catch (e: Exception) {
+                _error.value = "Verwijderen mislukt: ${e.localizedMessage}"
             }
             closeEditor()
         }
@@ -115,12 +127,16 @@ class ShoppingViewModel @Inject constructor(
 
     fun toggleComplete(item: Task) {
         viewModelScope.launch {
-            val toggled = item.copy(isCompleted = !item.isCompleted)
-            val hid = householdId.value
-            if (hid != null) {
-                firestoreRepository.upsertItem(hid, toggled)
-            } else {
-                repository.toggleComplete(item)
+            try {
+                val toggled = item.copy(isCompleted = !item.isCompleted)
+                val hid = householdId.value
+                if (hid != null) {
+                    firestoreRepository.upsertItem(hid, toggled)
+                } else {
+                    repository.toggleComplete(item)
+                }
+            } catch (e: Exception) {
+                _error.value = "Bijwerken mislukt: ${e.localizedMessage}"
             }
         }
     }

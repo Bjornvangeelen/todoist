@@ -18,4 +18,6 @@ class TaskRepository @Inject constructor(
     suspend fun deleteTask(task: Task) = taskDao.deleteTask(task)
 
     suspend fun toggleComplete(task: Task) = taskDao.upsertTask(task.copy(isCompleted = !task.isCompleted))
+
+    suspend fun getShoppingItemsOnce(): List<Task> = taskDao.getTasksByTypeOnce(TaskType.SHOPPING)
 }
