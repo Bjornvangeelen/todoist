@@ -272,7 +272,7 @@ fun EmailDetailSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartialExpansion = true),
+        sheetState = rememberModalBottomSheetState(),
     ) {
         Column(
             modifier = Modifier
