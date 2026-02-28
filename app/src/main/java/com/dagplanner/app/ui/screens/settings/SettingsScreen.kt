@@ -1,5 +1,6 @@
 package com.dagplanner.app.ui.screens.settings
 
+import com.dagplanner.app.R
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -73,7 +74,10 @@ fun SettingsScreen(
     }
 
     fun startGoogleSignIn() {
+        val webClientId = context.getString(R.string.default_web_client_id)
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(webClientId)
+            .requestServerAuthCode(webClientId)
             .requestEmail()
             .requestScopes(
                 Scope(CalendarScopes.CALENDAR),
