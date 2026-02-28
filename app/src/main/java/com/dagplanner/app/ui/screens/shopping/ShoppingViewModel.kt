@@ -3,27 +3,41 @@ package com.dagplanner.app.ui.screens.shopping
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dagplanner.app.data.model.Task
-import com.dagplanner.app.data.model.TaskPriority
 import com.dagplanner.app.data.model.TaskType
+import com.dagplanner.app.data.preferences.UserPreferences
+import com.dagplanner.app.data.repository.FirestoreShoppingRepository
 import com.dagplanner.app.data.repository.TaskRepository
 import com.dagplanner.app.ui.screens.tasks.TaskEditorState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.time.LocalDate
-import java.time.LocalTime
 import javax.inject.Inject
 
 @HiltViewModel
 class ShoppingViewModel @Inject constructor(
-    private val repository: TaskRepository
+    private val repository: TaskRepository,
+    private val firestoreRepository: FirestoreShoppingRepository,
+    private val userPreferences: UserPreferences,
 ) : ViewModel() {
 
-    val items: StateFlow<List<Task>> = repository.getTasksByType(TaskType.SHOPPING)
+    val householdId: StateFlow<String?> = userPreferences.householdId
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val items: StateFlow<List<Task>> = userPreferences.householdId
+        .flatMapLatest { householdId ->
+            if (householdId != null) {
+                firestoreRepository.getItems(householdId)
+            } else {
+                repository.getTasksByType(TaskType.SHOPPING)
+            }
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _editorState = MutableStateFlow(TaskEditorState())
@@ -73,19 +87,37 @@ class ShoppingViewModel @Inject constructor(
                 location = s.location.ifBlank { null },
                 reminder = s.reminder,
             )
-            repository.upsertTask(item)
+            val hid = householdId.value
+            if (hid != null) {
+                firestoreRepository.upsertItem(hid, item)
+            } else {
+                repository.upsertTask(item)
+            }
             closeEditor()
         }
     }
 
     fun deleteItem(item: Task) {
         viewModelScope.launch {
-            repository.deleteTask(item)
+            val hid = householdId.value
+            if (hid != null) {
+                firestoreRepository.deleteItem(hid, item)
+            } else {
+                repository.deleteTask(item)
+            }
             closeEditor()
         }
     }
 
     fun toggleComplete(item: Task) {
-        viewModelScope.launch { repository.toggleComplete(item) }
+        viewModelScope.launch {
+            val toggled = item.copy(isCompleted = !item.isCompleted)
+            val hid = householdId.value
+            if (hid != null) {
+                firestoreRepository.upsertItem(hid, toggled)
+            } else {
+                repository.toggleComplete(item)
+            }
+        }
     }
 }

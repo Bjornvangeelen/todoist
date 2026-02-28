@@ -1,6 +1,5 @@
 package com.dagplanner.app.ui.screens.settings
 
-import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -14,6 +13,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.GroupAdd
+import androidx.compose.material.icons.filled.GroupOff
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.LinkOff
 import androidx.compose.material.icons.filled.Sync
@@ -45,6 +47,8 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    var joinCode by remember { mutableStateOf("") }
+    var showJoinField by remember { mutableStateOf(false) }
 
     val googleSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -176,6 +180,103 @@ fun SettingsScreen(
                 }
             }
 
+            // ── Gedeelde boodschappenlijst ─────────────────────────────
+            SettingsSection(title = "Gedeelde boodschappenlijst") {
+                if (uiState.householdId != null) {
+                    ListItem(
+                        headlineContent = { Text("Gekoppeld huishouden") },
+                        supportingContent = { Text("Code: ${uiState.householdId}") },
+                        leadingContent = {
+                            Icon(
+                                Icons.Default.Group,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    ListItem(
+                        headlineContent = {
+                            Text("Ontkoppelen", color = MaterialTheme.colorScheme.error)
+                        },
+                        supportingContent = { Text("Boodschappenlijst wordt weer alleen lokaal opgeslagen") },
+                        leadingContent = {
+                            Icon(
+                                Icons.Default.GroupOff,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        },
+                        modifier = Modifier.clickableIfEnabled(!uiState.isHouseholdLoading) {
+                            viewModel.leaveHousehold()
+                        }
+                    )
+                } else {
+                    ListItem(
+                        headlineContent = { Text("Nieuw huishouden aanmaken") },
+                        supportingContent = { Text("Maak een gedeelde lijst en deel de code met je partner") },
+                        leadingContent = {
+                            if (uiState.isHouseholdLoading) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                            } else {
+                                Icon(
+                                    Icons.Default.GroupAdd,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        },
+                        modifier = Modifier.clickableIfEnabled(!uiState.isHouseholdLoading) {
+                            viewModel.createHousehold()
+                        }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    if (showJoinField) {
+                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                            OutlinedTextField(
+                                value = joinCode,
+                                onValueChange = { joinCode = it.uppercase().take(6) },
+                                label = { Text("Huishouden-code (6 tekens)") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedButton(
+                                    onClick = { showJoinField = false; joinCode = "" },
+                                    modifier = Modifier.weight(1f)
+                                ) { Text("Annuleren") }
+                                Button(
+                                    onClick = {
+                                        viewModel.joinHousehold(joinCode)
+                                        showJoinField = false
+                                        joinCode = ""
+                                    },
+                                    enabled = joinCode.length == 6 && !uiState.isHouseholdLoading,
+                                    modifier = Modifier.weight(1f)
+                                ) { Text("Koppelen") }
+                            }
+                        }
+                    } else {
+                        ListItem(
+                            headlineContent = { Text("Bestaand huishouden koppelen") },
+                            supportingContent = { Text("Voer de code in die je partner heeft gedeeld") },
+                            leadingContent = {
+                                Icon(
+                                    Icons.Default.Link,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            },
+                            modifier = Modifier.clickableIfEnabled(!uiState.isHouseholdLoading) {
+                                showJoinField = true
+                            }
+                        )
+                    }
+                }
+            }
+
             // ── Google Agenda ──────────────────────────────────────────
             SettingsSection(title = "Google Agenda") {
                 if (uiState.googleAccountName != null) {
@@ -238,7 +339,7 @@ fun SettingsScreen(
                 ListItem(
                     headlineContent = { Text("Privacy") },
                     supportingContent = {
-                        Text("Deze app slaat agenda-gegevens lokaal op je apparaat op. Er worden geen gegevens naar externe servers gestuurd.")
+                        Text("Deze app slaat agenda-gegevens lokaal op je apparaat op. Gedeelde boodschappenlijsten worden gesynchroniseerd via Firebase.")
                     }
                 )
             }

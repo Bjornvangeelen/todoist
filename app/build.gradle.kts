@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -100,6 +101,11 @@ dependencies {
     implementation(libs.google.api.client.android)
     implementation(libs.google.api.services.calendar)
     implementation(libs.google.api.services.gmail)
+
+    // Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.firestore)
+    implementation(libs.coroutines.play.services)
 
     // Image loading
     implementation(libs.coil.compose)

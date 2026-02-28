@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.dagplanner.app.data.local.AppDatabase
 import com.dagplanner.app.data.local.CalendarDao
 import com.dagplanner.app.data.local.TaskDao
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,6 +25,10 @@ object AppModule {
             AppDatabase::class.java,
             "dagplanner.db"
         ).fallbackToDestructiveMigration().build()
+
+    @Provides
+    @Singleton
+    fun provideFirebaseFirestore(): FirebaseFirestore = FirebaseFirestore.getInstance()
 
     @Provides
     fun provideCalendarDao(db: AppDatabase): CalendarDao = db.calendarDao()
