@@ -3,22 +3,18 @@ package com.dagplanner.app.ui.screens.tasks
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Label
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.dagplanner.app.data.model.TaskPriority
+import com.dagplanner.app.ui.components.LocationAutocompleteField
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -43,7 +39,6 @@ fun TaskEditDialog(
     onFieldUpdate: (TaskEditorState.() -> TaskEditorState) -> Unit,
 ) {
     val isEditing = state.taskToEdit != null
-    val context = LocalContext.current
 
     var showDatePicker by remember { mutableStateOf(false) }
     var showDeadlinePicker by remember { mutableStateOf(false) }
@@ -234,23 +229,9 @@ fun TaskEditDialog(
                 }
 
                 // Locatie
-                OutlinedTextField(
+                LocationAutocompleteField(
                     value = state.location,
                     onValueChange = { onFieldUpdate { copy(location = it) } },
-                    label = { Text("Locatie (optioneel)") },
-                    leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
-                    trailingIcon = {
-                        IconButton(onClick = {
-                            val query = state.location.trim().ifBlank { "" }
-                            val uri = if (query.isNotBlank())
-                                Uri.parse("https://www.google.com/maps/search/?q=${Uri.encode(query)}")
-                            else Uri.parse("https://maps.google.com/")
-                            context.startActivity(Intent(Intent.ACTION_VIEW, uri))
-                        }) {
-                            Icon(Icons.Default.Map, contentDescription = "Bekijk op kaart")
-                        }
-                    },
-                    singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
 
