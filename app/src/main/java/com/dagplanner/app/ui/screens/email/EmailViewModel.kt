@@ -19,6 +19,10 @@ data class EmailUiState(
     val accountName: String? = null,
     val selectedEmail: EmailMessage? = null,
     val isLoadingBody: Boolean = false,
+    val isReplying: Boolean = false,
+    val replyText: String = "",
+    val isSendingReply: Boolean = false,
+    val isDeleting: Boolean = false,
 )
 
 @HiltViewModel
@@ -55,18 +59,72 @@ class EmailViewModel @Inject constructor(
     }
 
     fun openEmail(email: EmailMessage) {
-        _uiState.value = _uiState.value.copy(selectedEmail = email)
+        _uiState.value = _uiState.value.copy(selectedEmail = email, isReplying = false, replyText = "")
         if (email.body == null) {
             loadBody(email)
         }
     }
 
     fun closeEmail() {
-        _uiState.value = _uiState.value.copy(selectedEmail = null, isLoadingBody = false)
+        _uiState.value = _uiState.value.copy(
+            selectedEmail = null,
+            isLoadingBody = false,
+            isReplying = false,
+            replyText = "",
+        )
     }
 
     fun clearError() {
         _uiState.value = _uiState.value.copy(error = null)
+    }
+
+    fun startReply() {
+        _uiState.value = _uiState.value.copy(isReplying = true)
+    }
+
+    fun cancelReply() {
+        _uiState.value = _uiState.value.copy(isReplying = false, replyText = "")
+    }
+
+    fun updateReplyText(text: String) {
+        _uiState.value = _uiState.value.copy(replyText = text)
+    }
+
+    fun sendReply() {
+        val account = _uiState.value.accountName ?: return
+        val email = _uiState.value.selectedEmail ?: return
+        val text = _uiState.value.replyText.trim()
+        if (text.isBlank()) return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isSendingReply = true)
+            val result = repository.sendReply(account, email, text)
+            _uiState.value = _uiState.value.copy(
+                isSendingReply = false,
+                isReplying = false,
+                replyText = "",
+                error = result.exceptionOrNull()?.message,
+            )
+        }
+    }
+
+    fun deleteEmail(email: EmailMessage) {
+        val account = _uiState.value.accountName ?: return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isDeleting = true)
+            val result = repository.trashMessage(account, email.id)
+            if (result.isSuccess) {
+                _uiState.value = _uiState.value.copy(
+                    isDeleting = false,
+                    selectedEmail = null,
+                    emails = _uiState.value.emails.filter { it.id != email.id },
+                )
+            } else {
+                _uiState.value = _uiState.value.copy(
+                    isDeleting = false,
+                    error = result.exceptionOrNull()?.message,
+                )
+            }
+        }
     }
 
     private fun loadBody(email: EmailMessage) {

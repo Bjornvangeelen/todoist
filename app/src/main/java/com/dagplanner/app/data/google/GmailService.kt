@@ -8,6 +8,7 @@ import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.gmail.Gmail
 import com.google.api.services.gmail.GmailScopes
+import com.google.api.services.gmail.model.Message
 import com.google.api.services.gmail.model.MessagePart
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -23,7 +24,7 @@ class GmailService @Inject constructor(
 ) {
     companion object {
         private const val APP_NAME = "DagPlanner"
-        val SCOPES = listOf(GmailScopes.GMAIL_READONLY)
+        val SCOPES = listOf(GmailScopes.GMAIL_MODIFY, GmailScopes.GMAIL_SEND)
     }
 
     private fun buildGmailService(accountName: String): Gmail {
@@ -88,6 +89,42 @@ class GmailService @Inject constructor(
         }
     }
 
+    suspend fun trashMessage(
+        accountName: String,
+        messageId: String,
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val service = buildGmailService(accountName)
+            service.users().messages().trash("me", messageId).execute()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun sendReply(
+        accountName: String,
+        originalEmail: EmailMessage,
+        replyText: String,
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val service = buildGmailService(accountName)
+            val subject = if (originalEmail.subject.startsWith("Re:", ignoreCase = true))
+                originalEmail.subject else "Re: ${originalEmail.subject}"
+            val raw = buildMimeMessage(
+                to = originalEmail.from,
+                from = accountName,
+                subject = subject,
+                body = replyText,
+            )
+            val message = Message().setRaw(raw).setThreadId(originalEmail.threadId)
+            service.users().messages().send("me", message).execute()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     // ── Hulpfuncties ────────────────────────────────────────────────────────
 
     private fun mapMessage(msg: com.google.api.services.gmail.model.Message): EmailMessage? {
@@ -113,6 +150,19 @@ class GmailService @Inject constructor(
             snippet = msg.snippet ?: "",
             isRead = isRead,
         )
+    }
+
+    private fun buildMimeMessage(to: String, from: String, subject: String, body: String): String {
+        val mime = buildString {
+            appendLine("To: $to")
+            appendLine("From: $from")
+            appendLine("Subject: $subject")
+            appendLine("MIME-Version: 1.0")
+            appendLine("Content-Type: text/plain; charset=UTF-8")
+            appendLine()
+            append(body)
+        }
+        return Base64.encodeToString(mime.toByteArray(Charsets.UTF_8), Base64.URL_SAFE or Base64.NO_WRAP)
     }
 
     private fun extractBody(payload: MessagePart?): String? {
