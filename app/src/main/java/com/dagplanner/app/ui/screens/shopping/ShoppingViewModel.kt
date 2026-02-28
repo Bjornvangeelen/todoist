@@ -62,9 +62,7 @@ class ShoppingViewModel @Inject constructor(
     private val _editorState = MutableStateFlow(TaskEditorState())
     val editorState: StateFlow<TaskEditorState> = _editorState.asStateFlow()
 
-    fun setSearchQuery(query: String) {
-        _searchQuery.value = query
-    }
+    fun setSearchQuery(query: String) { _searchQuery.value = query }
 
     fun openNewItemEditor() {
         _editorState.value = TaskEditorState(isOpen = true, taskType = TaskType.SHOPPING)
@@ -86,13 +84,8 @@ class ShoppingViewModel @Inject constructor(
         )
     }
 
-    fun closeEditor() {
-        _editorState.value = TaskEditorState()
-    }
-
-    fun clearError() {
-        _error.value = null
-    }
+    fun closeEditor() { _editorState.value = TaskEditorState() }
+    fun clearError() { _error.value = null }
 
     fun updateField(update: TaskEditorState.() -> TaskEditorState) {
         _editorState.value = _editorState.value.update()
@@ -116,11 +109,8 @@ class ShoppingViewModel @Inject constructor(
             )
             try {
                 val hid = householdId.value
-                if (hid != null) {
-                    firestoreRepository.upsertItem(hid, item)
-                } else {
-                    repository.upsertTask(item)
-                }
+                if (hid != null) firestoreRepository.upsertItem(hid, item)
+                else repository.upsertTask(item)
                 reminderScheduler.schedule(item)
                 closeEditor()
             } catch (e: Exception) {
@@ -135,11 +125,8 @@ class ShoppingViewModel @Inject constructor(
             try {
                 reminderScheduler.cancel(item.id)
                 val hid = householdId.value
-                if (hid != null) {
-                    firestoreRepository.deleteItem(hid, item)
-                } else {
-                    repository.deleteTask(item)
-                }
+                if (hid != null) firestoreRepository.deleteItem(hid, item)
+                else repository.deleteTask(item)
             } catch (e: Exception) {
                 _error.value = "Verwijderen mislukt: ${e.localizedMessage}"
             }
@@ -152,14 +139,47 @@ class ShoppingViewModel @Inject constructor(
             try {
                 val toggled = item.copy(isCompleted = !item.isCompleted)
                 val hid = householdId.value
-                if (hid != null) {
-                    firestoreRepository.upsertItem(hid, toggled)
-                } else {
-                    repository.toggleComplete(item)
+                if (hid != null) firestoreRepository.upsertItem(hid, toggled)
+                else repository.toggleComplete(item)
+            } catch (e: Exception) {
+                _error.value = "Bijwerken mislukt: ${e.localizedMessage}"
+            }
+        }
+    }
+
+    fun markAllComplete() {
+        viewModelScope.launch {
+            val active = allItems.value.filter { !it.isCompleted }
+            try {
+                val hid = householdId.value
+                active.forEach { item ->
+                    val toggled = item.copy(isCompleted = true)
+                    if (hid != null) firestoreRepository.upsertItem(hid, toggled)
+                    else repository.upsertTask(toggled)
                 }
             } catch (e: Exception) {
                 _error.value = "Bijwerken mislukt: ${e.localizedMessage}"
             }
         }
+    }
+
+    fun buildShareText(): String {
+        val items = allItems.value
+        if (items.isEmpty()) return "Boodschappenlijst is leeg."
+        return buildString {
+            appendLine("Boodschappenlijst:")
+            val byCategory = items.filter { !it.isCompleted }
+                .groupBy { it.label ?: "Overig" }
+                .toSortedMap()
+            byCategory.forEach { (cat, catItems) ->
+                appendLine("\n$cat:")
+                catItems.forEach { appendLine("  • ${it.title}") }
+            }
+            val done = items.filter { it.isCompleted }
+            if (done.isNotEmpty()) {
+                appendLine("\nIn mandje:")
+                done.forEach { appendLine("  ✓ ${it.title}") }
+            }
+        }.trim()
     }
 }

@@ -2,6 +2,7 @@ package com.dagplanner.app.data.local
 
 import androidx.room.TypeConverter
 import com.dagplanner.app.data.model.TaskPriority
+import com.dagplanner.app.data.model.TaskRecurrence
 import com.dagplanner.app.data.model.TaskType
 import java.time.LocalDate
 import java.time.LocalTime
@@ -32,4 +33,11 @@ class Converters {
     @TypeConverter
     fun toTaskType(value: String): TaskType =
         try { TaskType.valueOf(value) } catch (e: Exception) { TaskType.TASK }
+
+    @TypeConverter
+    fun fromTaskRecurrence(recurrence: TaskRecurrence): String = recurrence.name
+
+    @TypeConverter
+    fun toTaskRecurrence(value: String): TaskRecurrence =
+        try { TaskRecurrence.valueOf(value) } catch (e: Exception) { TaskRecurrence.NONE }
 }

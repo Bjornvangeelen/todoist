@@ -4,6 +4,7 @@ import com.dagplanner.app.data.local.TaskDao
 import com.dagplanner.app.data.model.Task
 import com.dagplanner.app.data.model.TaskType
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -12,6 +13,9 @@ class TaskRepository @Inject constructor(
     private val taskDao: TaskDao
 ) {
     fun getTasksByType(type: TaskType): Flow<List<Task>> = taskDao.getTasksByType(type)
+
+    fun getTasksForDate(type: TaskType, date: LocalDate): Flow<List<Task>> =
+        taskDao.getTasksForDate(type, date.toString())
 
     suspend fun upsertTask(task: Task) = taskDao.upsertTask(task)
 

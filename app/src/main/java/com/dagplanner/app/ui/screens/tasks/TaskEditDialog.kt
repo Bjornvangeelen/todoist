@@ -1,5 +1,7 @@
 package com.dagplanner.app.ui.screens.tasks
 
+import android.Manifest
+import android.os.Build
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -8,13 +10,18 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.dagplanner.app.data.model.TaskPriority
+import com.dagplanner.app.data.model.TaskRecurrence
 import com.dagplanner.app.ui.components.LocationAutocompleteField
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -29,7 +36,7 @@ private val reminderOptions = listOf(
     "1d" to "1 dag van tevoren",
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun TaskEditDialog(
     state: TaskEditorState,
@@ -45,6 +52,12 @@ fun TaskEditDialog(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var timeExpanded by remember { mutableStateOf(false) }
     var reminderExpanded by remember { mutableStateOf(false) }
+    var recurrenceExpanded by remember { mutableStateOf(false) }
+
+    // Notificatiepermissie (Android 13+)
+    val notifPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        rememberPermissionState(Manifest.permission.POST_NOTIFICATIONS)
+    } else null
 
     val timeSlots = remember {
         (0..23).flatMap { hour -> listOf(0, 15, 30, 45).map { min -> LocalTime.of(hour, min) } }
@@ -60,19 +73,14 @@ fun TaskEditDialog(
                     Text("Verwijderen", color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) { Text("Annuleren") }
-            }
+            dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text("Annuleren") } }
         )
     }
 
     if (showDatePicker) {
         TaskDatePickerDialog(
             initialDate = state.date ?: LocalDate.now(),
-            onDateSelected = { date ->
-                onFieldUpdate { copy(date = date) }
-                showDatePicker = false
-            },
+            onDateSelected = { date -> onFieldUpdate { copy(date = date) }; showDatePicker = false },
             onDismiss = { showDatePicker = false }
         )
     }
@@ -80,10 +88,7 @@ fun TaskEditDialog(
     if (showDeadlinePicker) {
         TaskDatePickerDialog(
             initialDate = state.deadline ?: LocalDate.now(),
-            onDateSelected = { date ->
-                onFieldUpdate { copy(deadline = date) }
-                showDeadlinePicker = false
-            },
+            onDateSelected = { date -> onFieldUpdate { copy(deadline = date) }; showDeadlinePicker = false },
             onDismiss = { showDeadlinePicker = false }
         )
     }
@@ -93,9 +98,7 @@ fun TaskEditDialog(
         title = { Text(if (isEditing) "Taak bewerken" else "Nieuwe taak") },
         text = {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
+                modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // Titel
@@ -108,21 +111,12 @@ fun TaskEditDialog(
                     isError = state.title.isBlank(),
                 )
 
-                // Datum (1 veld)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = { showDatePicker = true },
-                        modifier = Modifier.weight(1f)
-                    ) {
+                // Datum
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { showDatePicker = true }, modifier = Modifier.weight(1f)) {
                         Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text(
-                            state.date?.let { formatTaskDate(it) } ?: "Datum",
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                        Text(state.date?.let { formatTaskDate(it) } ?: "Datum", style = MaterialTheme.typography.bodySmall)
                     }
                     if (state.date != null) {
                         TextButton(onClick = { onFieldUpdate { copy(date = null, time = null) } }) {
@@ -131,13 +125,9 @@ fun TaskEditDialog(
                     }
                 }
 
-                // Tijd dropdown (alleen als datum is ingesteld)
+                // Tijd
                 if (state.date != null) {
-                    ExposedDropdownMenuBox(
-                        expanded = timeExpanded,
-                        onExpandedChange = { timeExpanded = it },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
+                    ExposedDropdownMenuBox(expanded = timeExpanded, onExpandedChange = { timeExpanded = it }, modifier = Modifier.fillMaxWidth()) {
                         OutlinedTextField(
                             value = state.time?.let { formatTaskTime(it) } ?: "Geen tijd",
                             onValueChange = {},
@@ -147,25 +137,10 @@ fun TaskEditDialog(
                             modifier = Modifier.menuAnchor().fillMaxWidth(),
                             singleLine = true,
                         )
-                        ExposedDropdownMenu(
-                            expanded = timeExpanded,
-                            onDismissRequest = { timeExpanded = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("Geen tijd") },
-                                onClick = {
-                                    onFieldUpdate { copy(time = null) }
-                                    timeExpanded = false
-                                }
-                            )
+                        ExposedDropdownMenu(expanded = timeExpanded, onDismissRequest = { timeExpanded = false }) {
+                            DropdownMenuItem(text = { Text("Geen tijd") }, onClick = { onFieldUpdate { copy(time = null) }; timeExpanded = false })
                             timeSlots.forEach { time ->
-                                DropdownMenuItem(
-                                    text = { Text(formatTaskTime(time)) },
-                                    onClick = {
-                                        onFieldUpdate { copy(time = time) }
-                                        timeExpanded = false
-                                    }
-                                )
+                                DropdownMenuItem(text = { Text(formatTaskTime(time)) }, onClick = { onFieldUpdate { copy(time = time) }; timeExpanded = false })
                             }
                         }
                     }
@@ -175,22 +150,15 @@ fun TaskEditDialog(
                 OutlinedTextField(
                     value = state.label,
                     onValueChange = { onFieldUpdate { copy(label = it) } },
-                    label = { Text("Label (optioneel)") },
+                    label = { Text("Label / categorie (optioneel)") },
                     leadingIcon = { Icon(Icons.Default.Label, contentDescription = null) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
 
                 // Prioriteit
-                Text(
-                    "Prioriteit",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
+                Text("Prioriteit", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     TaskPriority.entries.forEach { prio ->
                         FilterChip(
                             selected = state.priority == prio,
@@ -206,20 +174,11 @@ fun TaskEditDialog(
                 }
 
                 // Deadline
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = { showDeadlinePicker = true },
-                        modifier = Modifier.weight(1f)
-                    ) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { showDeadlinePicker = true }, modifier = Modifier.weight(1f)) {
                         Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text(
-                            state.deadline?.let { "Deadline: ${formatTaskDate(it)}" } ?: "Deadline (optioneel)",
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                        Text(state.deadline?.let { "Deadline: ${formatTaskDate(it)}" } ?: "Deadline (optioneel)", style = MaterialTheme.typography.bodySmall)
                     }
                     if (state.deadline != null) {
                         TextButton(onClick = { onFieldUpdate { copy(deadline = null) } }) {
@@ -235,12 +194,30 @@ fun TaskEditDialog(
                     modifier = Modifier.fillMaxWidth(),
                 )
 
-                // Herinnering dropdown
-                ExposedDropdownMenuBox(
-                    expanded = reminderExpanded,
-                    onExpandedChange = { reminderExpanded = it },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
+                // Herhaling
+                ExposedDropdownMenuBox(expanded = recurrenceExpanded, onExpandedChange = { recurrenceExpanded = it }, modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = state.recurrence.label,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Herhaling") },
+                        leadingIcon = { Icon(Icons.Default.Repeat, contentDescription = null) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = recurrenceExpanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                        singleLine = true,
+                    )
+                    ExposedDropdownMenu(expanded = recurrenceExpanded, onDismissRequest = { recurrenceExpanded = false }) {
+                        TaskRecurrence.entries.forEach { recurrence ->
+                            DropdownMenuItem(
+                                text = { Text(recurrence.label) },
+                                onClick = { onFieldUpdate { copy(recurrence = recurrence) }; recurrenceExpanded = false }
+                            )
+                        }
+                    }
+                }
+
+                // Herinnering
+                ExposedDropdownMenuBox(expanded = reminderExpanded, onExpandedChange = { reminderExpanded = it }, modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = reminderOptions.find { it.first == state.reminder }?.second ?: "Geen herinnering",
                         onValueChange = {},
@@ -251,23 +228,40 @@ fun TaskEditDialog(
                         modifier = Modifier.menuAnchor().fillMaxWidth(),
                         singleLine = true,
                     )
-                    ExposedDropdownMenu(
-                        expanded = reminderExpanded,
-                        onDismissRequest = { reminderExpanded = false }
-                    ) {
+                    ExposedDropdownMenu(expanded = reminderExpanded, onDismissRequest = { reminderExpanded = false }) {
                         reminderOptions.forEach { (value, label) ->
                             DropdownMenuItem(
                                 text = { Text(label) },
                                 onClick = {
                                     onFieldUpdate { copy(reminder = value) }
                                     reminderExpanded = false
+                                    // Vraag notificatiepermissie als een herinnering wordt ingesteld
+                                    if (value != null && notifPermission?.status?.isGranted == false) {
+                                        notifPermission.launchPermissionRequest()
+                                    }
                                 }
                             )
                         }
                     }
                 }
 
-                // Verwijderknop (alleen bij bewerken)
+                // Notificatiepermissie-waarschuwing
+                if (state.reminder != null && notifPermission?.status?.isGranted == false) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.error)
+                        Text(
+                            "Sta meldingen toe om herinneringen te ontvangen.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
+
+                // Verwijderknop
                 if (isEditing) {
                     OutlinedButton(
                         onClick = { showDeleteConfirm = true },
@@ -283,20 +277,12 @@ fun TaskEditDialog(
             }
         },
         confirmButton = {
-            Button(
-                onClick = onSave,
-                enabled = state.title.isNotBlank() && !state.isSaving
-            ) {
-                if (state.isSaving) {
-                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                } else {
-                    Text("Opslaan")
-                }
+            Button(onClick = onSave, enabled = state.title.isNotBlank() && !state.isSaving) {
+                if (state.isSaving) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                else Text("Opslaan")
             }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss, enabled = !state.isSaving) { Text("Annuleren") }
-        }
+        dismissButton = { TextButton(onClick = onDismiss, enabled = !state.isSaving) { Text("Annuleren") } }
     )
 }
 
@@ -307,9 +293,7 @@ private fun TaskDatePickerDialog(
     onDateSelected: (LocalDate) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = initialDate.toEpochDay() * 86_400_000L
-    )
+    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialDate.toEpochDay() * 86_400_000L)
     DatePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
@@ -320,17 +304,15 @@ private fun TaskDatePickerDialog(
             }) { Text("OK") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Annuleren") } }
-    ) {
-        DatePicker(state = datePickerState)
-    }
+    ) { DatePicker(state = datePickerState) }
 }
 
 @Composable
 fun priorityColor(priority: TaskPriority) = when (priority) {
-    TaskPriority.NONE -> MaterialTheme.colorScheme.onSurfaceVariant
-    TaskPriority.LOW -> androidx.compose.ui.graphics.Color(0xFF4CAF50)
+    TaskPriority.NONE   -> MaterialTheme.colorScheme.onSurfaceVariant
+    TaskPriority.LOW    -> androidx.compose.ui.graphics.Color(0xFF4CAF50)
     TaskPriority.MEDIUM -> androidx.compose.ui.graphics.Color(0xFFFF9800)
-    TaskPriority.HIGH -> androidx.compose.ui.graphics.Color(0xFFF44336)
+    TaskPriority.HIGH   -> androidx.compose.ui.graphics.Color(0xFFF44336)
 }
 
 fun formatTaskDate(date: LocalDate): String =
