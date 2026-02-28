@@ -54,6 +54,37 @@ fun AgendaScreen(
     val today = LocalDate.now()
     var selectedDay by remember { mutableStateOf(today) }
     var weekStart by remember { mutableStateOf(today.with(DayOfWeek.MONDAY)) }
+    // Dialog met alle evenementen van een dag in het weekraster
+    var dayEventsDialog by remember { mutableStateOf<Pair<LocalDate, List<CalendarEvent>>?>(null) }
+
+    // Toon alle evenementen van een dag als de gebruiker op "+N meer" tikt
+    dayEventsDialog?.let { (date, events) ->
+        val locale = Locale("nl")
+        val fmt = DateTimeFormatter.ofPattern("EEEE d MMMM", locale)
+        AlertDialog(
+            onDismissRequest = { dayEventsDialog = null },
+            title = { Text(date.format(fmt).replaceFirstChar { it.uppercase() }) },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    events.forEach { event ->
+                        AgendaEventItem(
+                            event = event,
+                            onClick = {
+                                dayEventsDialog = null
+                                viewModel.openEditEventEditor(event)
+                            }
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { dayEventsDialog = null }) { Text("Sluiten") }
+            }
+        )
+    }
 
     if (editorState.isOpen) {
         EventEditDialog(
@@ -162,6 +193,7 @@ fun AgendaScreen(
                     onPreviousWeek = { weekStart = weekStart.minusWeeks(1) },
                     onNextWeek = { weekStart = weekStart.plusWeeks(1) },
                     onEventClick = { viewModel.openEditEventEditor(it) },
+                    onMoreClick = { date, events -> dayEventsDialog = Pair(date, events) },
                 )
             }
         }
@@ -254,6 +286,7 @@ private fun WeekGridView(
     onPreviousWeek: () -> Unit,
     onNextWeek: () -> Unit,
     onEventClick: (CalendarEvent) -> Unit,
+    onMoreClick: (LocalDate, List<CalendarEvent>) -> Unit,
 ) {
     val eventsByDate = remember(monthEvents) { monthEvents.groupBy { it.startDate } }
     val weekDays = (0..6).map { weekStart.plusDays(it.toLong()) }
@@ -303,12 +336,14 @@ private fun WeekGridView(
             // Linker kolom: ma, di, wo, do
             Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
                 weekDays.take(4).forEach { date ->
+                    val dayEvents = (eventsByDate[date] ?: emptyList())
+                        .sortedWith(compareBy({ !it.isAllDay }, { it.startTime }))
                     WeekDayCell(
                         date = date,
-                        events = (eventsByDate[date] ?: emptyList())
-                            .sortedWith(compareBy({ !it.isAllDay }, { it.startTime })),
+                        events = dayEvents,
                         isToday = date == today,
                         onEventClick = onEventClick,
+                        onMoreClick = { onMoreClick(date, dayEvents) },
                         modifier = Modifier.weight(1f).padding(end = 3.dp, bottom = 3.dp),
                     )
                 }
@@ -316,12 +351,14 @@ private fun WeekGridView(
             // Rechter kolom: vr, za, zo + lege cel
             Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
                 weekDays.drop(4).forEach { date ->
+                    val dayEvents = (eventsByDate[date] ?: emptyList())
+                        .sortedWith(compareBy({ !it.isAllDay }, { it.startTime }))
                     WeekDayCell(
                         date = date,
-                        events = (eventsByDate[date] ?: emptyList())
-                            .sortedWith(compareBy({ !it.isAllDay }, { it.startTime })),
+                        events = dayEvents,
                         isToday = date == today,
                         onEventClick = onEventClick,
+                        onMoreClick = { onMoreClick(date, dayEvents) },
                         modifier = Modifier.weight(1f).padding(start = 3.dp, bottom = 3.dp),
                     )
                 }
@@ -338,6 +375,7 @@ private fun WeekDayCell(
     events: List<CalendarEvent>,
     isToday: Boolean,
     onEventClick: (CalendarEvent) -> Unit,
+    onMoreClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val locale = Locale("nl")
@@ -401,7 +439,11 @@ private fun WeekDayCell(
                 text = "+${events.size - maxShow} meer",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
-                fontSize = 9.sp
+                fontSize = 9.sp,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .clickable { onMoreClick() }
+                    .padding(horizontal = 2.dp, vertical = 1.dp)
             )
         }
     }
