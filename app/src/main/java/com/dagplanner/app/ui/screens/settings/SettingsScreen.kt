@@ -35,6 +35,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.Scope
 import com.google.api.services.calendar.CalendarScopes
+import com.google.api.services.gmail.GmailScopes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,7 +71,10 @@ fun SettingsScreen(
     fun startGoogleSignIn() {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
-            .requestScopes(Scope(CalendarScopes.CALENDAR))
+            .requestScopes(
+                Scope(CalendarScopes.CALENDAR),
+                Scope(GmailScopes.GMAIL_READONLY),
+            )
             .build()
         val client = GoogleSignIn.getClient(context, gso)
         googleSignInLauncher.launch(client.signInIntent)

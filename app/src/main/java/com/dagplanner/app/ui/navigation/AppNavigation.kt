@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CheckBox
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Icon
@@ -24,6 +25,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.dagplanner.app.ui.screens.calendar.AgendaScreen
 import com.dagplanner.app.ui.screens.calendar.CalendarScreen
+import com.dagplanner.app.ui.screens.email.EmailScreen
 import com.dagplanner.app.ui.screens.settings.SettingsScreen
 import com.dagplanner.app.ui.screens.shopping.ShoppingScreen
 import com.dagplanner.app.ui.screens.tasks.TasksScreen
@@ -33,6 +35,7 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
     data object AgendaView : Screen("agenda_view", "Dagoverzicht", Icons.Default.CalendarToday)
     data object Tasks : Screen("tasks", "Taken", Icons.Default.CheckBox)
     data object Shopping : Screen("shopping", "Boodschappen", Icons.Default.ShoppingCart)
+    data object Email : Screen("email", "E-mail", Icons.Default.Email)
     data object Settings : Screen("settings", "Instellingen", Icons.Default.Settings)
 }
 
@@ -41,6 +44,7 @@ val bottomNavItems = listOf(
     Screen.AgendaView,
     Screen.Tasks,
     Screen.Shopping,
+    Screen.Email,
     Screen.Settings,
 )
 
@@ -81,6 +85,7 @@ fun AppNavigation() {
             composable(Screen.AgendaView.route) { AgendaScreen(navController) }
             composable(Screen.Tasks.route) { TasksScreen(navController) }
             composable(Screen.Shopping.route) { ShoppingScreen(navController) }
+            composable(Screen.Email.route) { EmailScreen(navController) }
             composable(Screen.Settings.route) { SettingsScreen(navController) }
         }
     }
