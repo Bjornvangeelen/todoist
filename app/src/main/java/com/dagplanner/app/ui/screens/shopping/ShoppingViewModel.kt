@@ -87,13 +87,17 @@ class ShoppingViewModel @Inject constructor(
                 location = s.location.ifBlank { null },
                 reminder = s.reminder,
             )
-            val hid = householdId.value
-            if (hid != null) {
-                firestoreRepository.upsertItem(hid, item)
-            } else {
-                repository.upsertTask(item)
+            try {
+                val hid = householdId.value
+                if (hid != null) {
+                    firestoreRepository.upsertItem(hid, item)
+                } else {
+                    repository.upsertTask(item)
+                }
+                closeEditor()
+            } catch (e: Exception) {
+                _editorState.value = s.copy(isSaving = false)
             }
-            closeEditor()
         }
     }
 
